@@ -3,8 +3,13 @@
   "private": true,
   "license": "MIT",
   "type": "module",
-  "workspaces": ["packages/*"],
-  "engines": { "node": ">=22" },
+  "workspaces": [
+    "packages/*",
+    "contracts"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "typecheck": "tsc -b",
     "test": "vitest run",
@@ -14,6 +19,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
     "fast-check": "^4.3.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
