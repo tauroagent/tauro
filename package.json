@@ -1,0 +1,20 @@
+{
+  "name": "tauro",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
+    "check:claims": "node tools/claimcheck.mjs"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.4",
+    "fast-check": "^4.3.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

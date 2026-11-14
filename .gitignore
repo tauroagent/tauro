@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.wrangler/
+.dev.vars
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+*.log
