@@ -16,3 +16,4 @@ contracts/broadcast/
 contracts/artifacts/
 contracts/cache/
 contracts/types/
+*.tsbuildinfo
