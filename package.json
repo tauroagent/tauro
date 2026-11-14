@@ -5,13 +5,14 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "contracts"
+    "contracts",
+    "apps/*"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p apps/worker",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
     "check:claims": "node tools/claimcheck.mjs"
