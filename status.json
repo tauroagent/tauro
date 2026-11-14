@@ -2,15 +2,77 @@
   "$comment": "Single source of truth for public claims. README, site and docs render from this file; tools/claimcheck.mjs fails CI when they drift.",
   "updated": "2026-11-15",
   "claims": [
-    { "id": "engine", "text": "Rules engine: one pure hourly step shared by backtest, paper and live.", "status": "in_testing", "proof": "packages/engine/test" },
-    { "id": "gate", "text": "Price gate: a real fill is blocked when the pool and Chainlink differ by more than 2%, or the feed is stale.", "status": "in_testing", "proof": "packages/gate/test" },
-    { "id": "seal", "text": "Each hour's decisions are sealed on chain before the next hourly close.", "status": "in_testing", "proof": "packages/seal/test, contracts/test" },
-    { "id": "tamper", "text": "A decision changed after sealing no longer matches its root.", "status": "in_testing", "proof": "packages/seal/test (an edited decision fails its proof)" },
-    { "id": "missed", "text": "Missed seals are shown as missed, never back-filled.", "status": "in_testing", "proof": "contracts/test (skipped hours stay empty)" },
-    { "id": "registry", "text": "SealRegistry deployed and source-verified on Robinhood Chain.", "status": "planned", "proof": null },
-    { "id": "agents", "text": "House paper agents decide every hour.", "status": "planned", "proof": null },
-    { "id": "live_wallet", "text": "One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it.", "status": "planned", "proof": null },
-    { "id": "api", "text": "Read API and MCP, no key needed.", "status": "planned", "proof": null },
-    { "id": "verify_cli", "text": "Verify CLI: recompute any sealed hour from public data.", "status": "planned", "proof": null }
+    {
+      "id": "engine",
+      "text": "Rules engine: one pure hourly step shared by backtest, paper and live.",
+      "status": "in_testing",
+      "proof": "packages/engine/test"
+    },
+    {
+      "id": "gate",
+      "text": "Price gate: a real fill is blocked when the pool and Chainlink differ by more than 2%, or the feed is stale.",
+      "status": "in_testing",
+      "proof": "packages/gate/test"
+    },
+    {
+      "id": "seal",
+      "text": "Each hour's decisions are sealed on chain before the next hourly close.",
+      "status": "in_testing",
+      "proof": "packages/seal/test, contracts/test"
+    },
+    {
+      "id": "tamper",
+      "text": "A decision changed after sealing no longer matches its root.",
+      "status": "in_testing",
+      "proof": "packages/seal/test (an edited decision fails its proof)"
+    },
+    {
+      "id": "missed",
+      "text": "Missed seals are shown as missed, never back-filled.",
+      "status": "in_testing",
+      "proof": "contracts/test (skipped hours stay empty)"
+    },
+    {
+      "id": "closes",
+      "text": "Hourly Chainlink closes for 35 Robinhood Chain stock tokens, stored as read and never rewritten.",
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/prices?symbol=TSLA, https://tauroagent.com/api/v1/ingest"
+    },
+    {
+      "id": "api",
+      "text": "Read API, no key needed.",
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1"
+    },
+    {
+      "id": "registry",
+      "text": "SealRegistry deployed and source-verified on Robinhood Chain.",
+      "status": "planned",
+      "proof": null
+    },
+    {
+      "id": "agents",
+      "text": "House paper agents decide every hour.",
+      "status": "planned",
+      "proof": null
+    },
+    {
+      "id": "live_wallet",
+      "text": "One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it.",
+      "status": "planned",
+      "proof": null
+    },
+    {
+      "id": "verify_cli",
+      "text": "Verify CLI: recompute any sealed hour from public data.",
+      "status": "planned",
+      "proof": null
+    },
+    {
+      "id": "mcp",
+      "text": "MCP server for agents.",
+      "status": "planned",
+      "proof": null
+    }
   ]
 }
