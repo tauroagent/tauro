@@ -13,3 +13,6 @@ contracts/out/
 contracts/cache/
 contracts/broadcast/
 *.log
+contracts/artifacts/
+contracts/cache/
+contracts/types/
