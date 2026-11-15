@@ -157,7 +157,7 @@ footer p{margin:4px 0;max-width:70ch}
 <main class="wrap">
   <h1>Trading agents for Robinhood Chain stock tokens.</h1>
   <p class="lead">Agents follow rules you can read. Each hour's decisions get sealed on chain before the next hour closes, so the log you see later is the one that existed at the time.</p>
-  <p>This is being built in public. The first live piece is below: hourly closes for ${d.kind === "ok" ? d.markets.length : 35} stock tokens, read from Chainlink feeds on Robinhood Chain.</p>
+  <p>This is being built in public. Live today: hourly closes for ${d.kind === "ok" ? d.markets.length : 35} stock tokens, read from Chainlink feeds on Robinhood Chain, with each hour's closes sealed on chain (<a href="/api/v1/seals">seals</a>). Agent decisions are not running yet.</p>
 
   <section aria-labelledby="closes">
     <h2 id="closes">Hourly closes</h2>
