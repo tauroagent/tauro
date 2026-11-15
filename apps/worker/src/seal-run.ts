@@ -72,7 +72,8 @@ export interface SealEnv {
 export async function sendPending(env: SealEnv, pub: PublicClient): Promise<{ hour: number; status: string }[]> {
   if (!env.SIGNER_KEY || !env.REGISTRY_ADDRESS) return [];
   const registry = env.REGISTRY_ADDRESS as Hex;
-  const account = privateKeyToAccount(env.SIGNER_KEY as Hex);
+  const key = env.SIGNER_KEY.trim();
+  const account = privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as Hex); // MetaMask exports keys without 0x
   const urls = [...(env.RPC_URL ? [env.RPC_URL] : []), "https://robinhood-rpc.publicnode.com", "https://robinhood.drpc.org"];
   const wallet = createWalletClient({ account, chain: robinhood, transport: fallback(urls.map((u) => http(u, { timeout: 10_000 }))) });
 
