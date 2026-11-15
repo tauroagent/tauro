@@ -15,22 +15,28 @@
       "proof": "packages/gate/test"
     },
     {
+      "id": "seal_prices",
+      "text": "Each hour's price closes are sealed on chain before the next hourly close.",
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/seals, first seal tx 0xdefc517393bd75e13e5a1cfe257c426fb9c185f71cd0294c1bb4df7ad238778e"
+    },
+    {
       "id": "seal",
-      "text": "Each hour's decisions are sealed on chain before the next hourly close.",
+      "text": "Each hour's agent decisions are sealed on chain before the next hourly close.",
       "status": "in_testing",
       "proof": "packages/seal/test, contracts/test"
     },
     {
       "id": "tamper",
       "text": "A decision changed after sealing no longer matches its root.",
-      "status": "in_testing",
-      "proof": "packages/seal/test (an edited decision fails its proof)"
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/proof?hour=1794780000&subject=TSLA and SealRegistry.verify()"
     },
     {
       "id": "missed",
       "text": "Missed seals are shown as missed, never back-filled.",
-      "status": "in_testing",
-      "proof": "contracts/test (skipped hours stay empty)"
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/seals (status missed, with reason)"
     },
     {
       "id": "closes",

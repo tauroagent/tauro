@@ -13,9 +13,10 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 |---|---|
 | Rules engine: one pure hourly step shared by backtest, paper and live. | In testing |
 | Price gate: a real fill is blocked when the pool and Chainlink differ by more than 2%, or the feed is stale. | In testing |
-| Each hour's decisions are sealed on chain before the next hourly close. | In testing |
-| A decision changed after sealing no longer matches its root. | In testing |
-| Missed seals are shown as missed, never back-filled. | In testing |
+| Each hour's price closes are sealed on chain before the next hourly close. | Live |
+| Each hour's agent decisions are sealed on chain before the next hourly close. | In testing |
+| A decision changed after sealing no longer matches its root. | Live |
+| Missed seals are shown as missed, never back-filled. | Live |
 | Hourly Chainlink closes for 35 Robinhood Chain stock tokens, stored as read and never rewritten. | Live |
 | Read API, no key needed. | Live |
 | SealRegistry deployed and source-verified on Robinhood Chain. | Live |
