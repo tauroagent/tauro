@@ -1,4 +1,4 @@
-import { buildTree, canonicalize, leafHash, LeafKind, payloadHash, sealTiming } from "@tauro/seal";
+import { buildTree, canonicalize, leafHash, LeafKind, payloadHash, sealDeadline, sealTiming } from "@tauro/seal";
 import type { Hex } from "viem";
 
 export interface PriceRow {
@@ -52,10 +52,20 @@ export type SealDecision =
   | { action: "missed"; reason: string }
   | { action: "already"; reason: string };
 
-/** What to do with a built hour, given the registry's current state. */
-export function decideSeal(hour: number, root: Hex, chain: { lastHour: number; lastRoot: Hex; sealCount: number; rootAtHour: Hex }): SealDecision {
+/**
+ * What to do with a built hour, given the registry's current state and the time.
+ * We never send a late seal: once the deadline (close of the following hour) has passed,
+ * the hour is recorded as missed, with the reason, and stays missed.
+ */
+export function decideSeal(
+  hour: number,
+  root: Hex,
+  chain: { lastHour: number; lastRoot: Hex; sealCount: number; rootAtHour: Hex },
+  nowSec: number,
+): SealDecision {
   if (chain.rootAtHour.toLowerCase() === root.toLowerCase()) return { action: "already", reason: "root already on chain" };
   if (chain.sealCount > 0 && hour <= chain.lastHour) return { action: "missed", reason: `registry is already at hour ${chain.lastHour}` };
+  if (nowSec >= sealDeadline(hour)) return { action: "missed", reason: "deadline passed before the seal was sent" };
   return { action: "send", prevRoot: chain.lastRoot };
 }
 

@@ -52,16 +52,21 @@ describe("decideSeal", () => {
   const root = ("0x" + "11".repeat(32)) as Hex;
   const zero = ("0x" + "00".repeat(32)) as Hex;
   it("sends the first seal with a zero prevRoot", () => {
-    expect(decideSeal(H, root, { lastHour: 0, lastRoot: zero, sealCount: 0, rootAtHour: zero })).toEqual({ action: "send", prevRoot: zero });
+    expect(decideSeal(H, root, { lastHour: 0, lastRoot: zero, sealCount: 0, rootAtHour: zero }, H + 3700)).toEqual({ action: "send", prevRoot: zero });
   });
   it("chains to the registry's last root", () => {
     const last = ("0x" + "22".repeat(32)) as Hex;
-    expect(decideSeal(H, root, { lastHour: H - 3600, lastRoot: last, sealCount: 4, rootAtHour: zero })).toEqual({ action: "send", prevRoot: last });
+    expect(decideSeal(H, root, { lastHour: H - 3600, lastRoot: last, sealCount: 4, rootAtHour: zero }, H + 3700)).toEqual({ action: "send", prevRoot: last });
   });
   it("recognises a root already on chain", () => {
-    expect(decideSeal(H, root, { lastHour: H, lastRoot: root, sealCount: 1, rootAtHour: root }).action).toBe("already");
+    expect(decideSeal(H, root, { lastHour: H, lastRoot: root, sealCount: 1, rootAtHour: root }, H + 9999).action).toBe("already");
   });
   it("marks an hour missed once the registry has moved past it", () => {
-    expect(decideSeal(H, root, { lastHour: H + 3600, lastRoot: zero, sealCount: 2, rootAtHour: zero }).action).toBe("missed");
+    expect(decideSeal(H, root, { lastHour: H + 3600, lastRoot: zero, sealCount: 2, rootAtHour: zero }, H + 3700).action).toBe("missed");
+  });
+  it("never sends after the deadline", () => {
+    const c = { lastHour: H - 3600, lastRoot: zero, sealCount: 1, rootAtHour: zero };
+    expect(decideSeal(H, root, c, H + 7199).action).toBe("send");
+    expect(decideSeal(H, root, c, H + 7200)).toEqual({ action: "missed", reason: "deadline passed before the seal was sent" });
   });
 });
