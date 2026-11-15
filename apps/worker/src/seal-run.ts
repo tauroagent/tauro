@@ -96,7 +96,7 @@ export async function sendPending(env: SealEnv, pub: PublicClient): Promise<{ ho
       return { lastHour: Number(lastHour), lastRoot, sealCount: Number(sealCount), rootAtHour: at.root, sealedAt: Number(at.sealedAt) };
     };
     const chain = await read();
-    const d = decideSeal(s.hour, s.root, chain);
+    const d = decideSeal(s.hour, s.root, chain, now());
 
     if (d.action === "already") {
       await env.DB.prepare("UPDATE seals SET status = 'confirmed', block_time = ?, timing = ?, updated_at = ? WHERE hour = ?")
