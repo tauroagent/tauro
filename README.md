@@ -18,12 +18,22 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | Missed seals are shown as missed, never back-filled. | In testing |
 | Hourly Chainlink closes for 35 Robinhood Chain stock tokens, stored as read and never rewritten. | Live |
 | Read API, no key needed. | Live |
-| SealRegistry deployed and source-verified on Robinhood Chain. | Planned |
+| SealRegistry deployed and source-verified on Robinhood Chain. | Live |
 | House paper agents decide every hour. | Planned |
 | One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it. | Planned |
 | Verify CLI: recompute any sealed hour from public data. | Planned |
 | MCP server for agents. | Planned |
 <!-- status:end -->
+
+## Addresses (Robinhood Chain, 4663)
+
+| Role | Address |
+|---|---|
+| SealRegistry | [`0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14`](https://robinhoodchain.blockscout.com/address/0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14) · source verified on [Sourcify](https://repo.sourcify.dev/4663/0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14) (exact match) |
+| Seal signer (only address allowed to seal) | [`0xa6F3F0702cCC817436983e78250Df00B28D4BA17`](https://robinhoodchain.blockscout.com/address/0xa6F3F0702cCC817436983e78250Df00B28D4BA17) |
+| Deployer | [`0x0e28E7eAD47d030cB54ED1630F4cF249DdaED928`](https://robinhoodchain.blockscout.com/address/0x0e28E7eAD47d030cB54ED1630F4cF249DdaED928) |
+
+Machine-readable copy: [`contracts/deployments-4663.json`](contracts/deployments-4663.json).
 
 ## How an hour works
 

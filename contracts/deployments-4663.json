@@ -1,0 +1,14 @@
+{
+  "chainId": 4663,
+  "SealRegistry": {
+    "address": "0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14",
+    "signer": "0xa6F3F0702cCC817436983e78250Df00B28D4BA17",
+    "deployer": "0x0e28E7eAD47d030cB54ED1630F4cF249DdaED928",
+    "deployTx": "0x7cf4907d0aaf43eb1ba35c9f48e208513a6b6501f624a03a9e95d9d5d62d365e",
+    "deployBlock": 115277830,
+    "compiler": "0.8.28+commit.7893614a",
+    "sourcify": "https://repo.sourcify.dev/4663/0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14",
+    "sourcifyMatch": "exact_match",
+    "explorer": "https://robinhoodchain.blockscout.com/address/0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14"
+  }
+}

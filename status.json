@@ -47,8 +47,8 @@
     {
       "id": "registry",
       "text": "SealRegistry deployed and source-verified on Robinhood Chain.",
-      "status": "planned",
-      "proof": null
+      "status": "live",
+      "proof": "https://repo.sourcify.dev/4663/0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14 (exact match)"
     },
     {
       "id": "agents",

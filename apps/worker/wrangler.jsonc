@@ -9,5 +9,6 @@
   "d1_databases": [{ "binding": "DB", "database_name": "tauro", "database_id": "bdef5dff-6f7b-4fca-8f5d-d0b61ca9b8b5", "migrations_dir": "migrations" }],
   // Minute 1 of every hour: ingest the hour that just closed.
   "triggers": { "crons": ["1 * * * *"] },
+  "vars": { "REGISTRY_ADDRESS": "0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14" },
   "observability": { "enabled": true }
 }
