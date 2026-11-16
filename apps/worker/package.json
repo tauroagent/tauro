@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "viem": "^2.38.0",
-    "@tauro/seal": "*"
+    "@tauro/seal": "*",
+    "@tauro/engine": "*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251101.0",

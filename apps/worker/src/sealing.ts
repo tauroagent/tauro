@@ -20,10 +20,17 @@ export interface BuiltLeaf {
 
 /**
  * Leaves for one hour: one per market close (failed reads included, so a gap is sealed as a gap),
- * plus one for the hash of status.json, which timestamps every change to the public claims.
+ * one per agent decision and per agent created this hour (`extra`), plus one for the hash of status.json, which timestamps every change to the public claims.
  * Pure: the same rows and status give the same root.
  */
-export function buildHour(hour: number, rows: readonly PriceRow[], feeds: ReadonlyMap<string, string>, status: unknown) {
+export interface ExtraLeaf {
+  kind: number;
+  subject: string;
+  /** Canonical JSON as stored; it is parsed and re-canonicalized, which gives the same string. */
+  record: string;
+}
+
+export function buildHour(hour: number, rows: readonly PriceRow[], feeds: ReadonlyMap<string, string>, status: unknown, extra: readonly ExtraLeaf[] = []) {
   const leaves: BuiltLeaf[] = rows.map((r) => {
     const record = {
       symbol: r.symbol,
@@ -36,6 +43,10 @@ export function buildHour(hour: number, rows: readonly PriceRow[], feeds: Readon
     };
     return { leaf: leafHash({ kind: LeafKind.Price, subject: r.symbol, hour, record }), kind: LeafKind.Price, subject: r.symbol, record: canonicalize(record) };
   });
+  for (const e of extra) {
+    const record = JSON.parse(e.record) as unknown;
+    leaves.push({ leaf: leafHash({ kind: e.kind as LeafKind, subject: e.subject, hour, record }), kind: e.kind, subject: e.subject, record: canonicalize(record) });
+  }
   const statusRecord = { status_json_keccak256: payloadHash(status) };
   leaves.push({
     leaf: leafHash({ kind: LeafKind.Status, subject: "status.json", hour, record: statusRecord }),

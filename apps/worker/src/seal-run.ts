@@ -2,6 +2,7 @@ import { createWalletClient, fallback, http, type Hex, type PublicClient } from 
 import { privateKeyToAccount } from "viem/accounts";
 import status from "../../../status.json";
 import { robinhood } from "./chain.js";
+import { canonicalize, LeafKind } from "@tauro/seal";
 import { buildHour, decideSeal, sealTiming, type PriceRow } from "./sealing.js";
 import { MARKETS } from "./universe.js";
 
@@ -43,7 +44,21 @@ export async function buildPending(db: D1Database): Promise<number[]> {
     const rows = (
       await db.prepare("SELECT symbol, hour, round_id, answer, updated_at, status FROM price_hourly WHERE hour = ? ORDER BY symbol").bind(hour).all<PriceRow>()
     ).results;
-    const { leaves, root } = buildHour(hour, rows, FEEDS, status);
+    const decisions = (await db.prepare("SELECT agent, record FROM decisions WHERE hour = ? ORDER BY agent").bind(hour).all<{ agent: string; record: string }>()).results;
+    const created = (
+      await db.prepare("SELECT id, owner, template, market, rules, config_hash, paper, start_cash FROM agents WHERE created_hour = ? ORDER BY id").bind(hour).all<{
+        id: string; owner: string; template: string; market: string; rules: string; config_hash: string; paper: number; start_cash: number;
+      }>()
+    ).results;
+    const extra = [
+      ...decisions.map((d) => ({ kind: LeafKind.Decision, subject: d.agent, record: d.record })),
+      ...created.map((a) => ({
+        kind: LeafKind.AgentConfig,
+        subject: a.id,
+        record: canonicalize({ agent: a.id, owner: a.owner, template: a.template, market: a.market, rules: JSON.parse(a.rules), config_hash: a.config_hash, paper: a.paper === 1, start_cash: a.start_cash }),
+      })),
+    ];
+    const { leaves, root } = buildHour(hour, rows, FEEDS, status, extra);
     const t = now();
     await db.batch([
       ...leaves.map((l) =>
