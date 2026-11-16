@@ -57,6 +57,9 @@ if (canvas) {
   const bull = new Image();
   bull.decoding = "async";
   bull.src = "/brand/film/bull-line.webp";
+  const bullGlow = new Image();
+  bullGlow.decoding = "async";
+  bullGlow.src = "/brand/film/bull-glow.webp";
   function drawBull(tt) {
     if (W < 1100 || !bull.complete || !bull.naturalWidth) return;
     const w = Math.min(330, W * 0.22), h = (w * bull.naturalHeight) / bull.naturalWidth;
@@ -65,7 +68,11 @@ if (canvas) {
     const breathe = reduce ? 1 : 0.8 + 0.2 * Math.sin(tt * 0.9);
     ctx.save();
     ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = 0.5 * fade * breathe;
+    if (bullGlow.complete && bullGlow.naturalWidth) {
+      ctx.globalAlpha = 0.9 * fade * breathe;
+      ctx.drawImage(bullGlow, ox, oy, w, h);
+    }
+    ctx.globalAlpha = 0.95 * fade * breathe;
     ctx.drawImage(bull, ox, oy, w, h);
     ctx.restore();
   }
@@ -104,13 +111,6 @@ if (canvas) {
       ctx.fillStyle = "rgba(225,205,255,.95)"; ctx.shadowColor = "rgba(147,18,255,1)"; ctx.shadowBlur = 10;
       ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill();
     }
-    // Label.
-    ctx.globalAlpha = 0.55 * reveal; ctx.shadowBlur = 0;
-    ctx.fillStyle = "#c9a4ff"; ctx.font = "500 11px 'Spline Sans Mono', monospace";
-    const [lx, ly] = project(STARS.ald[0], STARS.ald[1], box);
-    ctx.fillText("α TAU · ALDEBARAN", lx + 10, ly + 18);
-    const [tx, ty] = project(5.75, 30, box);
-    ctx.fillText("TAURUS", tx, ty - 4);
     ctx.restore();
   }
 
