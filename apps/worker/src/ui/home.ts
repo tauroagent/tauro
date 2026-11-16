@@ -1,5 +1,6 @@
 import { agentName, explain, TEMPLATE_LABEL, type AgentSummary, type DecisionRow, type MarketCard, type Showcase, type SiteStats } from "../data.js";
 import { layout } from "./layout.js";
+import { skyHero } from "./sky.js";
 import { esc, int, pct, price, pts, short, spark, tone, usd, utcDay, utcHour, utcStamp } from "./util.js";
 
 export interface Claim {
@@ -17,6 +18,7 @@ export interface HomeModel {
   markets: MarketCard[];
   featuredSeries: number[];
   showcase: Showcase[];
+  seals: { hour: number; status: string; timing: string | null; leaf_count: number }[];
   claims: Claim[];
 }
 
@@ -35,67 +37,8 @@ function odometer(n: number): string {
   return `<span class="sr">${esc(s)}</span>${cols}`;
 }
 
-const STATUS_BAR = `<div class="status"><span>9:41</span><span aria-hidden="true">●●● ▮</span></div><div class="island" aria-hidden="true"></div>`;
-
 function bestRun(m: HomeModel): Showcase | undefined {
   return [...m.showcase].sort((a, b) => b.returnPct - b.holdPct - (a.returnPct - a.holdPct))[0];
-}
-
-function phones(m: HomeModel): string {
-  const best = bestRun(m);
-  const stop = best ? ((m.agents.find((a) => a.template === best.template)?.rules as { stopLossPct?: number } | undefined)?.stopLossPct ?? null) : null;
-  const studio = best
-    ? `<a class="phone side" href="/studio?market=${esc(best.market)}" aria-label="Open the Studio"><div class="screen">${STATUS_BAR}
-  <h4>Studio</h4><div class="sub">Shape a strategy, replay it</div>
-  <div class="chips">${Object.entries(TEMPLATE_LABEL).map(([k, v]) => `<span class="chip${k === best.template ? " on" : ""}">${esc(v)}</span>`).join("")}</div>
-  <div class="chips"><span class="chip on">${esc(best.market)}</span></div>
-  <div class="box"><div class="sub">Replay, ${esc(utcDay(best.from))} to ${esc(utcDay(best.to))}</div><div class="big ${tone(best.returnPct)}">${pct(best.returnPct)}</div><div class="sub" style="margin-top:6px">${pts(best.returnPct - best.holdPct)} versus holding</div></div>
-  ${stop !== null ? `<div class="row"><span>Stop loss</span><b>${stop}%</b></div>` : ""}
-  <div class="row"><span>Fee per fill</span><b>0.5%</b></div>
-  <div class="pcta">Replay in the Studio</div>
-</div></a>`
-    : "";
-  const a = m.agents[0];
-  const agent = a
-    ? `<a class="phone" href="/agents/${esc(a.id)}" aria-label="Open ${esc(agentName(a))}"><div class="screen">${STATUS_BAR}
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h4>${esc(agentName(a))}</h4><span class="tagc seal">Paper</span></div>
-  <div class="sub">House agent · decides every hour</div>
-  <div class="big ${tone(a.return_pct)}">${pct(a.return_pct)}</div>
-  <div class="sub" style="margin-top:6px">${pts(a.vs_hold_pts)} versus holding the same size</div>
-  ${spark(m.featuredSeries, 260, 70, true, `${a.market} closes, last 48 hours`)}
-  <div class="row"><span>Value</span><b>${a.equity === null ? "n/a" : usd(a.equity)}</b></div>
-  <div class="row"><span>Position</span><b>${a.qty > 0 ? "Holding " + esc(a.market) : "Flat"}</b></div>
-  <div class="row"><span>Decisions sealed</span><b>${int(a.decisions)}</b></div>
-  <div class="pcta">View agent</div>
-</div></a>`
-    : `<div class="phone"><div class="screen">${STATUS_BAR}<h4>House agents</h4><p class="sub" style="margin-top:12px">The first decisions land at the top of the next hour.</p></div></div>`;
-  const s = m.stats.lastSeal;
-  const log = `<a class="phone side" href="/verify" aria-label="Open Verify"><div class="screen">${STATUS_BAR}
-  <h4>Decision log</h4><div class="sub">${s ? `Last seal ${esc(utcHour(s.block_time ?? s.hour))}` : "Sealed hourly"}</div>
-  <div class="log">${
-    m.decisions.length
-      ? m.decisions.slice(0, 6).map((d) => `<div><span class="tagc ${esc(d.action)}">${esc(d.action)}</span><b>${esc(d.market)}</b> ${esc(TEMPLATE_LABEL[d.template] ?? d.template)}<br><span class="sub">${esc(utcStamp(d.hour))}</span></div>`).join("")
-      : s
-        ? `<div><span class="tagc seal">sealed</span>${int(s.leaf_count)} leaves<br><span class="sub mono">${esc(short(s.root, 8, 6))}</span></div>`
-        : ""
-  }</div>
-</div></a>`;
-  return `<div class="phones">${studio}${agent}${log}</div>`;
-}
-
-function hero(m: HomeModel): string {
-  const words = ["Trading", "agents", "for"].map((w, i) => `<span class="word" style="animation-delay:${i * 60}ms">${w}</span>`).join(" ");
-  const second = ["tokenized", "stocks"].map((w, i) => `<span class="word grad" style="animation-delay:${180 + i * 60}ms">${w}</span>`).join(" ");
-  return `<section class="hero" style="padding-bottom:0">
-  <div class="wrap">
-    <a class="badge" href="/verify"><img src="/brand/mark.svg" alt="" width="26" height="26">Every hourly decision sealed on Robinhood Chain <span aria-hidden="true">›</span></a>
-    <h1>${words}<br>${second}</h1>
-    <p class="lead">Rule-based agents that read Chainlink prices every hour, decide to buy, sell or hold, and seal the decision on chain before the next close. Replay strategies, follow the house agents, and check any hour yourself.</p>
-    <div class="ctas"><a class="btn" href="/studio">Replay a strategy</a><a class="btn soft" href="/agents">See live agents</a></div>
-    <p class="proofline">Paper trading. Open source. <a href="https://github.com/tauroagent/tauro">Read the code</a></p>
-    ${phones(m)}
-  </div>
-</section>`;
 }
 
 function stats(m: HomeModel): string {
@@ -109,31 +52,6 @@ function stats(m: HomeModel): string {
   return `<div class="stats-wrap"><div class="wrap stats">${cells
     .map(([k, v, src]) => `<div class="stat"><div class="k">${esc(k)}</div><div class="v" data-odo>${odometer(v)}</div><div class="src">${esc(src)}</div></div>`)
     .join("")}</div></div>`;
-}
-
-function deskPanel(m: HomeModel): string {
-  const rows = m.agents.slice(0, 7).map(
-    (a) => `<tr><td><span class="av">${esc(a.market.slice(0, 2))}</span><a href="/agents/${esc(a.id)}">${esc(agentName(a))}</a><div class="s" style="margin-left:38px">by Tauro · paper</div></td>
-<td>${esc(TEMPLATE_LABEL[a.template] ?? a.template)}<div class="s">${a.qty > 0 ? "Holding" : "Flat"}</div></td>
-<td class="num ${tone(a.return_pct)}">${pct(a.return_pct)}<div class="s">${a.equity === null ? "" : usd(a.equity)}</div></td>
-<td class="num ${tone(a.vs_hold_pts)}">${pts(a.vs_hold_pts)}<div class="s">vs holding</div></td>
-<td class="num">${int(a.decisions)}<div class="s">decisions</div></td></tr>`,
-  );
-  return `<div class="panel-dark">
-  <div class="wrap center">
-    <div class="mini-brand"><img src="/brand/mark.svg" alt="" width="30" height="30">Tauro desk</div>
-    <h2>A trading desk <span class="grad">on the record</span></h2>
-    <p class="lead" style="margin:22px auto 0">Every agent, its rules, its decisions and its result next to holding. Every number below comes from Chainlink closes on Robinhood Chain, and every decision behind it is sealed.</p>
-    <div class="ctas-c"><a class="btn light" href="/agents">Open the leaderboard</a><a class="btn dark-soft" href="/verify">Verify an hour</a></div>
-    <div class="app">
-      <aside aria-label="Desk sections"><a class="on" href="/agents">Leaderboard</a><a href="/markets">Markets</a><a href="/studio">Studio</a><a href="/verify">Verify</a><div class="grp">Open data</div><a href="/api/v1/seals">Seals</a><a href="/api/v1/agents">Agents API</a><a href="/api/v1/status">Claims</a></aside>
-      <div class="main">
-        <div class="crumb">tauro / <b>leaderboard</b></div>
-        ${rows.length ? `<div class="scroll"><table><thead><tr><th>Agent</th><th>Strategy</th><th class="num">Return</th><th class="num">vs holding</th><th class="num">Sealed</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>` : `<p style="color:#b3aa9b">The house agents make their first decision at the top of the next hour.</p>`}
-      </div>
-    </div>
-  </div>
-</div>`;
 }
 
 const ICONS: Record<string, string> = {
@@ -166,7 +84,7 @@ function strategies(m: HomeModel): string {
     })
     .join("");
   return `<div class="panel-dark" style="padding-top:96px">
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c4502f"/><stop offset="1" stop-color="#7e1f16"/></linearGradient></defs></svg>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b04dff"/><stop offset="1" stop-color="#5a12c0"/></linearGradient></defs></svg>
   <div class="wrap">
     <p class="eyebrow">Strategies</p>
     <h2>A strategy for <span class="grad">every market mood</span></h2>
@@ -385,13 +303,12 @@ function faq(): string {
 function closing(): string {
   return `<section style="padding-bottom:0">
   <div class="wrap">
-    <div class="closing reveal">
+    <div class="closing reveal" style="grid-template-columns:1fr;text-align:center">
       <div class="txt"><p class="eyebrow">Get started</p><h2>Check one hour <span class="grad">yourself</span></h2>
         <p>Pick any agent and any hour. Your browser rebuilds the decision and checks it against the root stored on Robinhood Chain. No account needed.</p>
-        <div class="ctas"><a class="btn" href="/verify">Open Verify</a><a class="btn soft" href="/studio">Try the Studio</a></div>
-        <div class="chipset"><span>Free</span><span>Paper only</span><span>Open source</span></div>
+        <div class="ctas" style="justify-content:center"><a class="btn" href="/verify">Open Verify</a><a class="btn soft" href="/studio">Try the Studio</a></div>
+        <div class="chipset" style="justify-content:center"><span>Free</span><span>Paper only</span><span>Open source</span></div>
       </div>
-      <picture><source type="image/webp" srcset="/brand/hero-900.webp"><img src="/brand/hero-900.jpg" width="900" height="600" alt="A red wax seal stamped with the Tauro mark on a ledger page" loading="lazy"></picture>
     </div>
   </div>
 </section>`;
@@ -403,7 +320,8 @@ export function renderHome(m: HomeModel): string {
       title: "Tauro · Trading agents for tokenized stocks on Robinhood Chain",
       description: "Rule-based paper trading agents for Robinhood Chain stock tokens. Chainlink prices, hourly decisions with their reasons, and every hour sealed on chain before the next close.",
       path: "/",
+      scripts: ["/js/sky.js"],
     },
-    [hero(m), stats(m), deskPanel(m), strategies(m), markets(m), howItWorks(), hourRail(m), decisionLog(m), statement(m), track(m), leaderboard(m), roadmap(m), claims(m), faq(), closing()].join("\n"),
+    [skyHero(m), stats(m), strategies(m), markets(m), howItWorks(), hourRail(m), decisionLog(m), statement(m), track(m), leaderboard(m), roadmap(m), claims(m), faq(), closing()].join("\n"),
   );
 }

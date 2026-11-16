@@ -72,3 +72,11 @@ if (lit) {
   addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 }
+
+// Entrance animations must never leave content hidden: if the page's animation clock is frozen
+// (a background tab, a headless screenshot, a crawler), finish them after a moment.
+setTimeout(() => {
+  for (const a of document.getAnimations()) {
+    if (["wipe", "fadeup", "rise2", "fadedown", "rise"].includes(a.animationName)) a.finish();
+  }
+}, 2600);

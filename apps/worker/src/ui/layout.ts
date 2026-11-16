@@ -9,6 +9,7 @@ export interface PageMeta {
 }
 
 const NAV = [
+  ["/", "Home"],
   ["/agents", "Agents"],
   ["/markets", "Markets"],
   ["/studio", "Studio"],
@@ -17,12 +18,11 @@ const NAV = [
 
 const X_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.8 3h3.1l-6.8 7.8 8 10.2h-6.3l-4.9-6.4L5.3 21H2.2l7.3-8.3L1.9 3h6.4l4.4 5.9L17.8 3Zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5Z"/></svg>`;
 const GH_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.2-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7c-.1-.3-.5-1.3.1-2.7 0 0 .8-.3 2.8 1a9.5 9.5 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .6 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"/></svg>`;
-const THEME_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor"/></svg>`;
 const MENU_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
 export function layout(meta: PageMeta, body: string): string {
   const url = `https://tauroagent.com${meta.path}`;
-  const nav = NAV.map(([href, label]) => `<a href="${href}"${meta.path === href || meta.path.startsWith(href + "/") ? ' aria-current="page"' : ""}>${label}</a>`).join("");
+  const nav = NAV.map(([href, label]) => `<a href="${href}"${meta.path === href || (href !== "/" && meta.path.startsWith(href + "/")) ? ' aria-current="page"' : ""}>${label}</a>`).join("");
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -39,8 +39,7 @@ export function layout(meta: PageMeta, body: string): string {
 <meta property="og:image" content="https://tauroagent.com/brand/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@Tauro_Agent">
-<meta name="theme-color" content="#f4efe6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#12100d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#000000">
 <link rel="preload" href="/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/css/site.css">
@@ -52,12 +51,11 @@ ${(meta.scripts ?? []).map((s) => `<script type="module" src="${s}"></script>`).
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="/"><img src="/brand/mark.svg" alt="" width="28" height="28">Tauro</a>
+    <a class="brand" href="/"><img src="/brand/mark-violet.svg" alt="" width="28" height="28">Tauro</a>
     <nav class="nav" aria-label="Main">${nav}</nav>
     <div class="top-right">
       <a class="icon-btn" href="https://github.com/tauroagent/tauro" aria-label="Source code on GitHub">${GH_ICON}</a>
       <a class="icon-btn" href="https://x.com/Tauro_Agent" aria-label="Tauro on X">${X_ICON}</a>
-      <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch between light and dark">${THEME_ICON}</button>
       <a class="btn sm hide-sm" href="/agents">See agents</a>
       <button class="icon-btn menu-btn" type="button" data-menu aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">${MENU_ICON}</button>
     </div>
@@ -70,7 +68,7 @@ ${body}
 <footer class="foot">
   <div class="wrap">
     <div>
-      <a class="brand" href="/"><img src="/brand/mark.svg" alt="" width="28" height="28">Tauro</a>
+      <a class="brand" href="/"><img src="/brand/mark-violet.svg" alt="" width="28" height="28">Tauro</a>
       <p style="max-width:40ch;margin:14px 0 0">Trading agents for tokenized stocks on Robinhood Chain. Rules you can read, decisions sealed on chain every hour.</p>
     </div>
     <div><h4>Product</h4><ul><li><a href="/agents">Agents</a></li><li><a href="/markets">Markets</a></li><li><a href="/studio">Studio</a></li><li><a href="/verify">Verify an hour</a></li></ul></div>
