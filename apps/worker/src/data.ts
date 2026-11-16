@@ -269,3 +269,8 @@ export async function hoursOfPrices(db: D1Database): Promise<number> {
   const r = await db.prepare("SELECT COUNT(DISTINCT hour) AS n FROM price_hourly WHERE status IN ('ok', 'backfill')").first<{ n: number }>();
   return r?.n ?? 0;
 }
+
+export async function recentSeals(db: D1Database, hours = 24): Promise<{ hour: number; status: string; timing: string | null; leaf_count: number }[]> {
+  const { results } = await db.prepare("SELECT hour, status, timing, leaf_count FROM seals ORDER BY hour DESC LIMIT ?").bind(hours).all<{ hour: number; status: string; timing: string | null; leaf_count: number }>();
+  return results.reverse();
+}
