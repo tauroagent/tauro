@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { closeBefore, hoursToIngest, type Round, type RoundReader } from "../src/rounds.js";
-import { renderHome } from "../src/page.js";
+import { renderHome, type HomeModel } from "../src/ui/home.js";
+import { renderAgents, renderNotFound, renderStudio, renderVerify } from "../src/ui/pages.js";
 import universe from "../src/universe.json";
 
 const H = 1_763_215_200;
@@ -77,33 +78,50 @@ describe("universe", () => {
   });
 });
 
-describe("renderHome", () => {
+describe("pages", () => {
   const claims = [{ id: "a", text: "x <b>", status: "planned" }];
-  it("escapes text and shows the empty state", () => {
-    const html = renderHome({ kind: "ok", lastRun: null, hoursIngested: 0, markets: [{ symbol: "T", name: "<i>", feed: "0x", close: null }], claims, agents: [] });
-    expect(html).toContain("No hour has been ingested yet");
-    expect(html).toContain("house agents start at the next full hour");
+  const empty: HomeModel = {
+    now: H,
+    stats: { markets: 35, agents: 0, decisions: 0, sealedOnTime: 0, sealsSinceFirst: 0, missedSinceFirst: 0, firstSealHour: null, lastSeal: null, lastIngest: null },
+    agents: [], decisions: [], markets: [], featuredSeries: [], claims,
+  };
+  const agent = {
+    id: "house-dip-hunter-tsla", template: "dip_hunter", market: "TSLA", paper: true, config_hash: "0xabc", created_hour: H, start_cash: 1000, start_price: 380,
+    rules: {}, cash: 900, qty: 0.25, entry_price: 400, pending: null, last_hour: H, price: 412, equity: 1003.2, return_pct: 0.32, hold_return_pct: -1.5,
+    vs_hold_pts: 1.82, last_action: "hold", decisions: 3, trades: 1,
+  };
+  const seal = { hour: H, root: "0x" + "ab".repeat(32), leaf_count: 56, status: "confirmed", tx_hash: "0x" + "cd".repeat(32), block_number: 1, block_time: H + 3700, timing: "on_time" };
+
+  it("home renders empty states and escapes text", () => {
+    const html = renderHome(empty);
+    expect(html).toContain("first decision at the top of the next hour");
     expect(html).toContain("x &lt;b&gt;");
-    expect(html).not.toContain("<i>");
+    expect(html).not.toContain("x <b>");
+    expect(html).not.toContain("\u2014");
   });
-  it("shows the error state", () => {
-    expect(renderHome({ kind: "error", message: "boom", claims })).toContain('role="alert"');
-  });
-  it("renders closes and contains no em dash", () => {
+
+  it("home renders the agent card, seal receipt, feed and leaderboard", () => {
     const html = renderHome({
-      kind: "ok",
-      lastRun: { hour: H, ok: 35, failed: 0 },
-      hoursIngested: 1,
-      markets: [{ symbol: "TSLA", name: "Tesla", feed: "0x", close: { hour: H, price: 387, round_id: "1", updated_at: H + 10 } }],
-      claims,
-      agents: [{ id: "house-dip-hunter-tsla", template: "dip_hunter", market: "TSLA", qty: 0.5, equity: 1003.2, return_pct: 0.32, hold_return_pct: -1.5, last_action: "hold", decisions: 3 }],
+      ...empty,
+      stats: { ...empty.stats, agents: 20, decisions: 40, sealedOnTime: 12, sealsSinceFirst: 12, firstSealHour: H, lastSeal: seal, lastIngest: { hour: H, ok: 35, failed: 0 } },
+      agents: [agent],
+      decisions: [{ agent: agent.id, template: "dip_hunter", market: "TSLA", hour: H, action: "buy", record: { fired: ["entry:rsi(14)<30"], values: {} } }],
+      featuredSeries: [1, 2, 3],
+      markets: [{ symbol: "TSLA", name: "Tesla", price: 412, change24: 1.2, series: [1, 2], updatedAt: H }],
     });
-    expect(html).toContain("Dip hunter");
+    expect(html).toContain("Dip hunter · TSLA");
     expect(html).toContain("+0.32%");
-    expect(html).toContain("-1.50%");
-    expect(html).toContain("Holding");
-    expect(html).toContain("387.00");
-    expect(html).toContain("35 of 35 feeds read");
-    expect(html).not.toContain("—");
+    expect(html).toContain("+1.82 pts");
+    expect(html).toContain("56");
+    expect(html).toContain("Buy signal: rsi(14)&lt;30");
+    expect(html).toContain("12<span");
+    expect(html).toContain("/verify?hour=");
+  });
+
+  it("inner pages render with a single h1 and no em dash", () => {
+    for (const html of [renderAgents([agent]), renderAgents([]), renderVerify(), renderStudio(), renderNotFound()]) {
+      expect(html.match(/<h1/g)?.length).toBe(1);
+      expect(html).not.toContain("\u2014");
+    }
   });
 });

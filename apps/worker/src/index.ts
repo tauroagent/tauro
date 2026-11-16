@@ -5,7 +5,9 @@ import type { Hex } from "viem";
 import { HOUSE_MARKETS, runAgents } from "./agents.js";
 import { runIngest } from "./ingest.js";
 import { buildPending, sendPending } from "./seal-run.js";
-import { renderHome, type HomeData } from "./page.js";
+import { agentSummaries, closes, equitySeries, marketCards, recentDecisions, siteStats } from "./data.js";
+import { renderHome, type HomeModel } from "./ui/home.js";
+import { renderAgent, renderAgents, renderMarket, renderMarkets, renderNotFound, renderStudio, renderVerify } from "./ui/pages.js";
 import { MARKETS, UNIVERSE_SOURCES } from "./universe.js";
 
 export interface Env {
@@ -51,76 +53,34 @@ async function latestCloses(db: D1Database) {
   return new Map(results.map((r) => [r.symbol, r]));
 }
 
-export interface AgentSummary {
-  id: string;
-  template: string;
-  market: string;
-  paper: boolean;
-  config_hash: string;
-  created_hour: number;
-  start_cash: number;
-  rules: unknown;
-  cash: number;
-  qty: number;
-  pending: unknown;
-  last_hour: number;
-  price: number | null;
-  equity: number | null;
-  return_pct: number | null;
-  hold_return_pct: number | null;
-  last_action: string | null;
-  decisions: number;
+const html = (body: string, status = 200, maxAge = 60): Response =>
+  new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": `public, max-age=${maxAge}` } });
+
+async function homeModel(env: Env): Promise<HomeModel> {
+  const [stats, agents, decisions, markets] = await Promise.all([siteStats(env.DB), agentSummaries(env.DB), recentDecisions(env.DB, 40), marketCards(env.DB)]);
+  const top = agents[0];
+  const featuredSeries = top ? (await closes(env.DB, top.market, 48)).map((c) => c.price) : [];
+  return { now: Math.floor(Date.now() / 1000), stats, agents, decisions, markets, featuredSeries, claims: status.claims };
 }
 
-async function agentSummaries(db: D1Database): Promise<AgentSummary[]> {
-  const { results } = await db
-    .prepare(
-      `SELECT a.id, a.template, a.market, a.paper, a.config_hash, a.created_hour, a.start_cash, a.start_price, a.rules,
-              s.cash, s.qty, s.pending, s.last_hour,
-              (SELECT price FROM price_hourly p WHERE p.symbol = a.market AND p.hour = s.last_hour) AS price,
-              (SELECT action FROM decisions d WHERE d.agent = a.id ORDER BY hour DESC LIMIT 1) AS last_action,
-              (SELECT COUNT(*) FROM decisions d WHERE d.agent = a.id) AS decisions
-         FROM agents a JOIN agent_state s ON s.agent = a.id ORDER BY a.market, a.template`,
-    )
-    .all<{
-      id: string; template: string; market: string; paper: number; config_hash: string; created_hour: number; start_cash: number;
-      start_price: number | null; rules: string; cash: number; qty: number; pending: string | null; last_hour: number; price: number | null;
-      last_action: string | null; decisions: number;
-    }>();
-  return results.map((r) => {
-    const equity = r.price === null ? null : r.cash + r.qty * r.price;
-    return {
-      id: r.id, template: r.template, market: r.market, paper: r.paper === 1, config_hash: r.config_hash, created_hour: r.created_hour,
-      start_cash: r.start_cash, rules: JSON.parse(r.rules), cash: r.cash, qty: r.qty, pending: r.pending ? JSON.parse(r.pending) : null,
-      last_hour: r.last_hour, price: r.price, equity,
-      return_pct: equity === null ? null : ((equity - r.start_cash) / r.start_cash) * 100,
-      hold_return_pct: r.price === null || !r.start_price ? null : ((r.price - r.start_price) / r.start_price) * 100,
-      last_action: r.last_action, decisions: r.decisions,
-    };
-  });
-}
+const LLMS = `# Tauro
 
-async function homeData(env: Env): Promise<HomeData> {
-  try {
-    const closes = await latestCloses(env.DB);
-    const runs = await env.DB.prepare("SELECT hour, ok, failed FROM ingest_runs WHERE finished_at IS NOT NULL ORDER BY hour DESC LIMIT 1").first<{
-      hour: number;
-      ok: number;
-      failed: number;
-    }>();
-    const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM ingest_runs WHERE finished_at IS NOT NULL").first<{ n: number }>();
-    return {
-      kind: "ok",
-      lastRun: runs ?? null,
-      hoursIngested: count?.n ?? 0,
-      markets: MARKETS.map((m) => ({ symbol: m.symbol, name: m.name, feed: m.feed, close: closes.get(m.symbol) ?? null })),
-      claims: status.claims,
-      agents: await agentSummaries(env.DB),
-    };
-  } catch (e) {
-    return { kind: "error", message: String(e).slice(0, 200), claims: status.claims };
-  }
-}
+> Paper trading agents for tokenized stocks on Robinhood Chain. Rules you can read, hourly Chainlink closes, and every hourly decision sealed on chain (SealRegistry 0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14, chain 4663) before the next close.
+
+## What is live
+- Hourly Chainlink closes for 35 Robinhood Chain stock tokens: https://tauroagent.com/api/v1/markets
+- 20 house paper agents (momentum, mean reversion, dip hunter, breakout on SPY, QQQ, NVDA, TSLA, AAPL): https://tauroagent.com/api/v1/agents
+- Hourly Merkle seals on chain: https://tauroagent.com/api/v1/seals
+- Proof for any leaf: https://tauroagent.com/api/v1/proof?hour=<unix hour>&subject=<agent id | symbol | status.json>
+- Every public claim and its status: https://tauroagent.com/api/v1/status
+
+## What Tauro is not
+- No agent trades real money yet. All returns are paper.
+- Not investment advice. Not for US persons.
+- Built on Robinhood Chain; not affiliated with Robinhood, Chainlink or Uniswap.
+
+Source (MIT): https://github.com/tauroagent/tauro
+`;
 
 async function handle(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
@@ -128,9 +88,17 @@ async function handle(req: Request, env: Env): Promise<Response> {
 
   switch (url.pathname) {
     case "/":
-      return new Response(renderHome(await homeData(env)), {
-        headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=60" },
-      });
+      return html(renderHome(await homeModel(env)));
+    case "/agents":
+      return html(renderAgents(await agentSummaries(env.DB)));
+    case "/markets":
+      return html(renderMarkets(await marketCards(env.DB)));
+    case "/verify":
+      return html(renderVerify(), 200, 3600);
+    case "/studio":
+      return html(renderStudio(), 200, 3600);
+    case "/llms.txt":
+      return new Response(LLMS, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
     case "/api/v1":
     case "/api":
       return json({ routes: ROUTES, auth: "none" }, { maxAge: 3600 });
@@ -229,9 +197,25 @@ async function handle(req: Request, env: Env): Promise<Response> {
     case "/version":
       return json({ git_sha: env.GIT_SHA ?? null, repository: "https://github.com/tauroagent/tauro" }, { maxAge: 300 });
     case "/robots.txt":
-      return new Response("User-agent: *\nAllow: /\n", { headers: { "content-type": "text/plain" } });
-    default:
-      return json({ error: "not found", routes: ROUTES }, { status: 404 });
+      return new Response("User-agent: *\nAllow: /\nDisallow: /api/\n", { headers: { "content-type": "text/plain" } });
+    default: {
+      const ag = url.pathname.match(/^\/agents\/([a-z0-9-]{1,80})$/);
+      if (ag) {
+        const a = (await agentSummaries(env.DB)).find((x) => x.id === ag[1]);
+        if (!a) return html(renderNotFound(), 404);
+        const [series, decisions] = await Promise.all([equitySeries(env.DB, a.id, a.market, a.start_cash), recentDecisions(env.DB, 48, a.id)]);
+        return html(renderAgent(a, series, decisions));
+      }
+      const mk = url.pathname.match(/^\/markets\/([A-Za-z.]{1,10})$/);
+      if (mk) {
+        const sym = mk[1]!.toUpperCase();
+        if (!MARKETS.some((m) => m.symbol === sym)) return html(renderNotFound(), 404);
+        const agents = (await agentSummaries(env.DB)).filter((a) => a.market === sym);
+        return html(renderMarket(sym, await closes(env.DB, sym, 168), agents));
+      }
+      if (url.pathname.startsWith("/api/")) return json({ error: "not found", routes: ROUTES }, { status: 404 });
+      return html(renderNotFound(), 404);
+    }
   }
 }
 

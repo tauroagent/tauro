@@ -12,7 +12,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "typecheck": "tsc -b && tsc -p apps/worker",
+    "typecheck": "tsc -b && tsc -p apps/worker && tsc -p apps/worker/tsconfig.client.json",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
     "check:claims": "node tools/claimcheck.mjs"
