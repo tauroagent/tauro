@@ -80,8 +80,9 @@ describe("universe", () => {
 describe("renderHome", () => {
   const claims = [{ id: "a", text: "x <b>", status: "planned" }];
   it("escapes text and shows the empty state", () => {
-    const html = renderHome({ kind: "ok", lastRun: null, hoursIngested: 0, markets: [{ symbol: "T", name: "<i>", feed: "0x", close: null }], claims });
+    const html = renderHome({ kind: "ok", lastRun: null, hoursIngested: 0, markets: [{ symbol: "T", name: "<i>", feed: "0x", close: null }], claims, agents: [] });
     expect(html).toContain("No hour has been ingested yet");
+    expect(html).toContain("house agents start at the next full hour");
     expect(html).toContain("x &lt;b&gt;");
     expect(html).not.toContain("<i>");
   });
@@ -95,7 +96,12 @@ describe("renderHome", () => {
       hoursIngested: 1,
       markets: [{ symbol: "TSLA", name: "Tesla", feed: "0x", close: { hour: H, price: 387, round_id: "1", updated_at: H + 10 } }],
       claims,
+      agents: [{ id: "house-dip-hunter-tsla", template: "dip_hunter", market: "TSLA", qty: 0.5, equity: 1003.2, return_pct: 0.32, hold_return_pct: -1.5, last_action: "hold", decisions: 3 }],
     });
+    expect(html).toContain("Dip hunter");
+    expect(html).toContain("+0.32%");
+    expect(html).toContain("-1.50%");
+    expect(html).toContain("Holding");
     expect(html).toContain("387.00");
     expect(html).toContain("35 of 35 feeds read");
     expect(html).not.toContain("—");

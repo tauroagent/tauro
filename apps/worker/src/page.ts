@@ -13,8 +13,20 @@ export interface MarketRow {
   close: { hour: number; price: number; round_id: string; updated_at: number } | null;
 }
 
+export interface AgentRow {
+  id: string;
+  template: string;
+  market: string;
+  qty: number;
+  equity: number | null;
+  return_pct: number | null;
+  hold_return_pct: number | null;
+  last_action: string | null;
+  decisions: number;
+}
+
 export type HomeData =
-  | { kind: "ok"; lastRun: { hour: number; ok: number; failed: number } | null; hoursIngested: number; markets: MarketRow[]; claims: Claim[] }
+  | { kind: "ok"; lastRun: { hour: number; ok: number; failed: number } | null; hoursIngested: number; markets: MarketRow[]; claims: Claim[]; agents: AgentRow[] }
   | { kind: "error"; message: string; claims: Claim[] };
 
 const esc = (s: string): string =>
@@ -53,6 +65,37 @@ function marketsSection(d: HomeData): string {
 <table>
   <caption>Chainlink close of the last ingested hour, USD per share</caption>
   <thead><tr><th scope="col">Token</th><th scope="col">Company or fund</th><th scope="col" class="num">Close</th><th scope="col" class="num">Feed updated</th></tr></thead>
+  <tbody>
+${rows}
+  </tbody>
+</table>
+</div>`;
+}
+
+const TEMPLATE_LABEL: Record<string, string> = { momentum: "Momentum", mean_reversion: "Mean reversion", dip_hunter: "Dip hunter", breakout: "Breakout" };
+const pct = (v: number | null): string => (v === null ? "" : `${v > 0 ? "+" : ""}${v.toFixed(2)}%`);
+
+function agentsSection(d: HomeData): string {
+  if (d.kind === "error") return `<p class="state" role="alert">Agents could not be loaded right now. Try <a href="/api/v1/agents">/api/v1/agents</a>.</p>`;
+  if (d.agents.length === 0) return `<p class="state">The house agents start at the next full hour.</p>`;
+  const rows = d.agents
+    .map(
+      (a) => `<tr>
+  <th scope="row"><a href="/api/v1/decisions?agent=${esc(a.id)}">${esc(TEMPLATE_LABEL[a.template] ?? a.template)}</a></th>
+  <td>${esc(a.market)}</td>
+  <td>${a.qty > 0 ? "Holding" : "Flat"}</td>
+  <td class="num">${a.equity === null ? "" : "$" + a.equity.toFixed(2)}</td>
+  <td class="num">${pct(a.return_pct)}</td>
+  <td class="num dim">${pct(a.hold_return_pct)}</td>
+  <td class="num">${a.decisions}</td>
+</tr>`,
+    )
+    .join("\n");
+  return `<p class="meta">Paper only. Each agent started with $1,000 and is compared with buying its market at the start and holding. Paper fills use the next hour's Chainlink close and a 0.5% fee, and wait while the feed is stale.</p>
+<div class="scroll" tabindex="0" role="region" aria-label="House agents table">
+<table>
+  <caption>${d.agents.length} house agents, same rules for everyone, decisions sealed hourly</caption>
+  <thead><tr><th scope="col">Rules</th><th scope="col">Market</th><th scope="col">Position</th><th scope="col" class="num">Equity</th><th scope="col" class="num">Return</th><th scope="col" class="num">Hold</th><th scope="col" class="num">Decisions</th></tr></thead>
   <tbody>
 ${rows}
   </tbody>
@@ -157,7 +200,12 @@ footer p{margin:4px 0;max-width:70ch}
 <main class="wrap">
   <h1>Trading agents for Robinhood Chain stock tokens.</h1>
   <p class="lead">Agents follow rules you can read. Each hour's decisions get sealed on chain before the next hour closes, so the log you see later is the one that existed at the time.</p>
-  <p>This is being built in public. Live today: hourly closes for ${d.kind === "ok" ? d.markets.length : 35} stock tokens, read from Chainlink feeds on Robinhood Chain, with each hour's closes sealed on chain (<a href="/api/v1/seals">seals</a>). Agent decisions are not running yet.</p>
+  <p>This is being built in public. Live today: hourly closes for ${d.kind === "ok" ? d.markets.length : 35} stock tokens, read from Chainlink feeds on Robinhood Chain, with each hour's closes and every paper agent decision sealed on chain (<a href="/api/v1/seals">seals</a>). No agent trades real money yet.</p>
+
+  <section aria-labelledby="agents">
+    <h2 id="agents">House agents (paper)</h2>
+    ${agentsSection(d)}
+  </section>
 
   <section aria-labelledby="closes">
     <h2 id="closes">Hourly closes</h2>

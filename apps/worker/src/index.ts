@@ -2,6 +2,7 @@ import status from "../../../status.json";
 import { client } from "./chain.js";
 import { buildTree, getProof } from "@tauro/seal";
 import type { Hex } from "viem";
+import { HOUSE_MARKETS, runAgents } from "./agents.js";
 import { runIngest } from "./ingest.js";
 import { buildPending, sendPending } from "./seal-run.js";
 import { renderHome, type HomeData } from "./page.js";
@@ -32,6 +33,8 @@ const ROUTES = {
   "/api/v1/ingest?hours=48": "Every ingest run, including failed reads, newest first.",
   "/api/v1/seals?hours=48": "Hourly Merkle roots: built, sent, confirmed on SealRegistry, failed or missed.",
   "/api/v1/proof?hour=1794690000&subject=TSLA": "One leaf with its record, Merkle proof, root and seal status.",
+  "/api/v1/agents": "House paper agents: rules, config hash, paper book, equity vs buy-and-hold.",
+  "/api/v1/decisions?agent=house-momentum-tsla&hours=24": "Every hourly decision of one agent, with the numbers its rules looked at and any paper fill.",
   "/api/v1/status": "Every public claim and its status (status.json).",
   "/version": "Deployed git commit.",
 };
@@ -46,6 +49,55 @@ async function latestCloses(db: D1Database) {
     )
     .all<{ symbol: string; hour: number; price: number; round_id: string; updated_at: number; status: string }>();
   return new Map(results.map((r) => [r.symbol, r]));
+}
+
+export interface AgentSummary {
+  id: string;
+  template: string;
+  market: string;
+  paper: boolean;
+  config_hash: string;
+  created_hour: number;
+  start_cash: number;
+  rules: unknown;
+  cash: number;
+  qty: number;
+  pending: unknown;
+  last_hour: number;
+  price: number | null;
+  equity: number | null;
+  return_pct: number | null;
+  hold_return_pct: number | null;
+  last_action: string | null;
+  decisions: number;
+}
+
+async function agentSummaries(db: D1Database): Promise<AgentSummary[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT a.id, a.template, a.market, a.paper, a.config_hash, a.created_hour, a.start_cash, a.start_price, a.rules,
+              s.cash, s.qty, s.pending, s.last_hour,
+              (SELECT price FROM price_hourly p WHERE p.symbol = a.market AND p.hour = s.last_hour) AS price,
+              (SELECT action FROM decisions d WHERE d.agent = a.id ORDER BY hour DESC LIMIT 1) AS last_action,
+              (SELECT COUNT(*) FROM decisions d WHERE d.agent = a.id) AS decisions
+         FROM agents a JOIN agent_state s ON s.agent = a.id ORDER BY a.market, a.template`,
+    )
+    .all<{
+      id: string; template: string; market: string; paper: number; config_hash: string; created_hour: number; start_cash: number;
+      start_price: number | null; rules: string; cash: number; qty: number; pending: string | null; last_hour: number; price: number | null;
+      last_action: string | null; decisions: number;
+    }>();
+  return results.map((r) => {
+    const equity = r.price === null ? null : r.cash + r.qty * r.price;
+    return {
+      id: r.id, template: r.template, market: r.market, paper: r.paper === 1, config_hash: r.config_hash, created_hour: r.created_hour,
+      start_cash: r.start_cash, rules: JSON.parse(r.rules), cash: r.cash, qty: r.qty, pending: r.pending ? JSON.parse(r.pending) : null,
+      last_hour: r.last_hour, price: r.price, equity,
+      return_pct: equity === null ? null : ((equity - r.start_cash) / r.start_cash) * 100,
+      hold_return_pct: r.price === null || !r.start_price ? null : ((r.price - r.start_price) / r.start_price) * 100,
+      last_action: r.last_action, decisions: r.decisions,
+    };
+  });
 }
 
 async function homeData(env: Env): Promise<HomeData> {
@@ -63,6 +115,7 @@ async function homeData(env: Env): Promise<HomeData> {
       hoursIngested: count?.n ?? 0,
       markets: MARKETS.map((m) => ({ symbol: m.symbol, name: m.name, feed: m.feed, close: closes.get(m.symbol) ?? null })),
       claims: status.claims,
+      agents: await agentSummaries(env.DB),
     };
   } catch (e) {
     return { kind: "error", message: String(e).slice(0, 200), claims: status.claims };
@@ -151,6 +204,26 @@ async function handle(req: Request, env: Env): Promise<Response> {
           "leaf = keccak256(keccak256(abi.encode(uint8 kind, keccak256(subject), uint64 hour, keccak256(record_canonical)))); walk the sorted-pair proof to root; compare with SealRegistry.sealOf(hour).root",
       });
     }
+    case "/api/v1/agents": {
+      const agents = await agentSummaries(env.DB);
+      return json({
+        note: "All agents here are paper. Paper fills happen at the next hour's Chainlink close with a 0.5% fee, only while the feed is fresh. Returns are on paper.",
+        markets: HOUSE_MARKETS,
+        agents,
+      });
+    }
+    case "/api/v1/decisions": {
+      const agent = url.searchParams.get("agent") ?? "";
+      const hours = Math.min(Math.max(Number(url.searchParams.get("hours") ?? 24) || 24, 1), 720);
+      const { results } = await env.DB.prepare("SELECT hour, action, record FROM decisions WHERE agent = ? ORDER BY hour DESC LIMIT ?")
+        .bind(agent, hours)
+        .all<{ hour: number; action: string; record: string }>();
+      if (results.length === 0) return json({ error: "no decisions for this agent", see: "/api/v1/agents" }, { status: 404 });
+      return json({
+        agent,
+        decisions: results.map((r) => ({ hour: r.hour, action: r.action, record: JSON.parse(r.record), proof: `/api/v1/proof?hour=${r.hour}&subject=${agent}` })),
+      });
+    }
     case "/api/v1/status":
       return json(status, { maxAge: 300 });
     case "/version":
@@ -175,9 +248,11 @@ export default {
     ctx.waitUntil(
       (async () => {
         const ingest = await runIngest(env.DB, c, Math.floor(Date.now() / 1000));
+        const agents = [];
+        for (const h of ingest.hours) agents.push(await runAgents(env.DB, h, env.GIT_SHA ?? "dev"));
         const built = await buildPending(env.DB);
         const sent = await sendPending(env, c);
-        console.log("hourly", JSON.stringify({ ingest, built, sent }));
+        console.log("hourly", JSON.stringify({ ingest, agents, built, sent }));
       })(),
     );
   },
