@@ -65,7 +65,7 @@ export function renderAgent(a: AgentSummary, series: { hour: number; equity: num
   const hold = a.start_price ? series.map((s) => a.start_cash - size + (size * s.price) / a.start_price!) : [];
   const log = decisions
     .map(
-      (d) => `<li class="entry"><div class="head"><span class="who"><span class="act ${esc(d.action)}">${esc(d.action)}</span>${esc(utcStamp(d.hour))}</span><a class="proof" href="/verify?hour=${d.hour}&amp;subject=${encodeURIComponent(a.id)}">Proof</a></div><p>${esc(explain(d))}</p></li>`,
+      (d) => `<li class="entry"><div class="head"><span class="who"><span class="tagc ${esc(d.action)}">${esc(d.action)}</span>${esc(utcStamp(d.hour))}</span><a class="proof" href="/verify?hour=${d.hour}&amp;subject=${encodeURIComponent(a.id)}">Proof</a></div><p>${esc(explain(d))}</p></li>`,
     )
     .join("");
   const body = `<div class="page-head"><div class="wrap">
