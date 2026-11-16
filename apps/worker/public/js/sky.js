@@ -2,7 +2,7 @@
 // - Three star layers drift away from the planet at different speeds (parallax), a few bright stars twinkle.
 // - The Taurus constellation, from real star positions, is drawn in ultraviolet: its lines draw in on load,
 //   Aldebaran (the bull's eye) glows, and the Pleiades sit on the shoulder. Its horns echo the Tauro mark.
-// - On the left, a faint dot-matrix bull (Taurus) made from a GPT Image 2 silhouette.
+// - On the left, a faint mythical line-art bull (Taurus) with star nodes, from GPT Image 2.
 // - The planet rim comes from a generated video on wide screens; the canvas rim is the fallback.
 // Animation runs at about 30 fps, only while the hero is on screen; reduced motion draws one still frame.
 const canvas = document.querySelector("[data-sky]");
@@ -52,27 +52,21 @@ if (canvas) {
   }
 
 
-  // Dot-matrix bull on the left, from a GPT Image 2 silhouette (96 x 54 grid, one hex string per row).
-  const BULL = ["000000000000000000180000", "000000000000000000300000", "000000000000000000600000", "000000000000000000e00000", "000000000000000001e00000", "000000000000000001c0000c", "000000000000000001c00004", "000000000000000003c0000c", "00000000000000ff83e0000e", "00000000000003fff3e0000e", "0000000000000ffffdf0000e", "0000000000003ffffdf8001e", "0000000000007ffffeffc03c", "000000000001ffffff7ff07c", "0000001c0007fffffffffffc", "000001fffffffffffffffff8", "00001ffffffffffffffffff0", "00007fffffffffffffffffe0", "0001ffffffffffffffffff00", "0003ffffffffffffffffff80", "00039fffffffffffffffffc0", "00071fffffffffffffffffe0", "000e3ffffffffffffffffff0", "000c3ffffffffffffffffe00", "001c3ffffffffffffffffc00", "00183ffffffffffffffffc00", "00183ffffffffffffffff800", "00703ffffffffffffffff800", "03f03ffffffffffffffff800", "07f03ffffffffffffffffc00", "0ff03ffffffffffffffffc00", "1ff03fffffffffffff8ffe00", "1fe03fffffffffffff0ffc00", "1fe03fffffffffffff07fc00", "1fe03fffffffffffff03f800", "1fc07ffffffffffffe000000", "1fc07ffffffffffffe000000", "1f00ffeffffffffffc000000", "3c01ffcff9fffffffc000000", "0003ff0ff03feffffc000000", "0003fc1fe00007f9fc000000", "0003f81fc00007f8fc000000", "0003f01f800003f87e000000", "0003e01f800003f07e000000", "0003c00f800001f03e000000", "0007c00f800001f01e000000", "0007c007c00000f01f000000", "00078003c00000f00f000000", "000f8003e00000f00f800000", "000f8001f00000f807c00000", "000fc001f80000f807e00000", "000fc001fc0000fc07f00000", "0007e000fe00007e03f00000", "000fe0007e0000fe03f80000"];
-  const BULL_COLS = 96;
-  const bullDots = [];
-  BULL.forEach((hex, y) => {
-    const bits = BigInt("0x" + hex).toString(2).padStart(BULL_COLS, "0");
-    for (let x = 0; x < BULL_COLS; x++) if (bits[x] === "1") bullDots.push([x, y]);
-  });
+  // A mythical line-art bull on the left (GPT Image 2, violet lines and star nodes on black),
+  // drawn with "screen" so its black disappears. It breathes faintly; hidden below 1100px wide.
+  const bull = new Image();
+  bull.decoding = "async";
+  bull.src = "/brand/film/bull-line.webp";
   function drawBull(tt) {
-    if (W < 1100) return;
-    const w = Math.min(330, W * 0.22), step = w / BULL_COLS;
-    const ox = Math.max(32, W * 0.03), oy = Math.min(H, innerHeight) * 0.56;
+    if (W < 1100 || !bull.complete || !bull.naturalWidth) return;
+    const w = Math.min(330, W * 0.22), h = (w * bull.naturalHeight) / bull.naturalWidth;
+    const ox = Math.max(28, W * 0.025), oy = Math.min(H, innerHeight) * 0.53;
     const fade = reduce ? 1 : Math.min(1, Math.max(0, (tt - 0.4) / 2));
+    const breathe = reduce ? 1 : 0.8 + 0.2 * Math.sin(tt * 0.9);
     ctx.save();
-    ctx.fillStyle = "#b47bff";
-    for (const [x, y] of bullDots) {
-      // A slow light wave sweeps across the dots so the bull breathes without moving.
-      const wave = reduce ? 0.5 : 0.5 + 0.5 * Math.sin(tt * 1.1 - x * 0.12 + y * 0.05);
-      ctx.globalAlpha = (0.12 + 0.2 * wave) * fade;
-      ctx.beginPath(); ctx.arc(ox + x * step, oy + y * step, step * 0.34, 0, Math.PI * 2); ctx.fill();
-    }
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = 0.5 * fade * breathe;
+    ctx.drawImage(bull, ox, oy, w, h);
     ctx.restore();
   }
 
