@@ -49,7 +49,10 @@ export async function agentSummaries(db: D1Database): Promise<AgentSummary[]> {
     .map((r) => {
       const equity = r.price === null ? null : r.cash + r.qty * r.price;
       const ret = equity === null ? null : ((equity - r.start_cash) / r.start_cash) * 100;
-      const hold = r.price === null || !r.start_price ? null : ((r.price - r.start_price) / r.start_price) * 100;
+      // Fair baseline: hold the same dollar amount the agent puts in per order, keep the rest in cash.
+      const rules = JSON.parse(r.rules) as { sizeUsd?: number };
+      const exposure = Math.min(1, (rules.sizeUsd ?? r.start_cash) / r.start_cash);
+      const hold = r.price === null || !r.start_price ? null : ((r.price - r.start_price) / r.start_price) * 100 * exposure;
       return {
         id: r.id, template: r.template, market: r.market, paper: r.paper === 1, config_hash: r.config_hash, created_hour: r.created_hour,
         start_cash: r.start_cash, start_price: r.start_price, rules: JSON.parse(r.rules), cash: r.cash, qty: r.qty, entry_price: r.entry_price,

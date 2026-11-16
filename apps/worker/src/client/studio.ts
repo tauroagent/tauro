@@ -41,16 +41,18 @@ async function run() {
   const rules: Rules = { ...structuredClone(TEMPLATES[template]!), market: market.value, stopLossPct: Number(stop.value) || 3, sizeUsd: Number(size.value) || 100 };
   const r = backtest(rules, candles, { feeBps: 50, lookback: 168, startUsd: 1000 });
   // Equity path, rebuilt from fills, for the chart.
+  const sz = Math.min(1000, rules.sizeUsd);
+  const holdPct = r.holdReturnPct * (sz / 1000);
   let cash = 1000, qty = 0, fi = 0; const eq: number[] = [], hold: number[] = [];
   for (const c of candles) {
     while (fi < r.fills.length && r.fills[fi]!.hour === c.t) { const f = r.fills[fi++]!; if (f.side === "buy") { qty = (f.usd - f.feeUsd) / f.price; cash -= f.usd; } else { cash += f.usd - f.feeUsd; qty = 0; } }
-    eq.push(cash + qty * c.close); hold.push((1000 * c.close) / candles[0]!.close);
+    eq.push(cash + qty * c.close); hold.push(1000 - sz + (sz * c.close) / candles[0]!.close);
   }
   $("[data-range]").textContent = `${candles.length} hourly closes, ${day(candles[0]!.t)} to ${day(candles[candles.length - 1]!.t)} (UTC). History before the agents started is backfilled from Chainlink rounds.`;
   const ret = $("[data-ret]"); ret.textContent = fmtPct(r.returnPct); ret.className = "big-result " + (r.returnPct > 0 ? "up" : r.returnPct < 0 ? "down" : "");
-  const hd = $("[data-hold]"); hd.textContent = fmtPct(r.holdReturnPct); hd.className = r.holdReturnPct > 0 ? "up" : r.holdReturnPct < 0 ? "down" : "";
+  const hd = $("[data-hold]"); hd.textContent = fmtPct(holdPct); hd.className = holdPct > 0 ? "up" : holdPct < 0 ? "down" : "";
   $("[data-chart]").innerHTML = chart(eq, hold);
-  const diff = r.returnPct - r.holdReturnPct;
+  const diff = r.returnPct - holdPct;
   $("[data-verdict]").textContent = r.fills.length === 0
     ? "No trade: the rules never fired on this history. Try another token or strategy."
     : diff >= 0 ? `Ahead of holding by ${diff.toFixed(2)} points on this history.` : `Behind holding by ${Math.abs(diff).toFixed(2)} points on this history.`;
