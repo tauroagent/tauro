@@ -5,6 +5,7 @@
   "compatibility_date": "2025-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
+  "assets": { "directory": "public", "binding": "ASSETS" },
   "routes": [{ "pattern": "tauroagent.com", "custom_domain": true }],
   "d1_databases": [{ "binding": "DB", "database_name": "tauro", "database_id": "bdef5dff-6f7b-4fca-8f5d-d0b61ca9b8b5", "migrations_dir": "migrations" }],
   // Minute 1 of every hour: ingest the hour that just closed.
