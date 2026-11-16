@@ -83,7 +83,7 @@ describe("pages", () => {
   const empty: HomeModel = {
     now: H,
     stats: { markets: 35, agents: 0, decisions: 0, sealedOnTime: 0, sealsSinceFirst: 0, missedSinceFirst: 0, firstSealHour: null, lastSeal: null, lastIngest: null },
-    agents: [], decisions: [], markets: [], featuredSeries: [], claims,
+    hoursOfPrices: 0, agents: [], decisions: [], markets: [], featuredSeries: [], showcase: [], claims,
   };
   const agent = {
     id: "house-dip-hunter-tsla", template: "dip_hunter", market: "TSLA", paper: true, config_hash: "0xabc", created_hour: H, start_cash: 1000, start_price: 380,
@@ -94,7 +94,7 @@ describe("pages", () => {
 
   it("home renders empty states and escapes text", () => {
     const html = renderHome(empty);
-    expect(html).toContain("first decision at the top of the next hour");
+    expect(html).toContain("first decision");
     expect(html).toContain("x &lt;b&gt;");
     expect(html).not.toContain("x <b>");
     expect(html).not.toContain("\u2014");
@@ -108,13 +108,16 @@ describe("pages", () => {
       decisions: [{ agent: agent.id, template: "dip_hunter", market: "TSLA", hour: H, action: "buy", record: { fired: ["entry:rsi(14)<30"], values: {} } }],
       featuredSeries: [1, 2, 3],
       markets: [{ symbol: "TSLA", name: "Tesla", price: 412, change24: 1.2, series: [1, 2], updatedAt: H }],
+      showcase: [{ template: "dip_hunter", market: "TSLA", returnPct: 2, holdPct: -1, fills: 2, maxDrawdownPct: 1, from: H - 86400, to: H, equity: [1000, 1020], hold: [1000, 990] }],
     });
+    expect(html).toContain("+3.00 pts");
+    expect(html).toContain("$1,020.00");
     expect(html).toContain("Dip hunter · TSLA");
     expect(html).toContain("+0.32%");
     expect(html).toContain("+1.82 pts");
     expect(html).toContain("56");
     expect(html).toContain("Buy signal: rsi(14)&lt;30");
-    expect(html).toContain("12<span");
+    expect(html).toContain("12/12");
     expect(html).toContain("/verify?hour=");
   });
 

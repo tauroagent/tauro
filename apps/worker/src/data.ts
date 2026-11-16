@@ -221,3 +221,51 @@ export async function equitySeries(db: D1Database, agent: string, market: string
     return { hour: r.hour, price: r.price, equity: pos.cash + pos.qty * r.price };
   });
 }
+
+export interface Showcase {
+  template: string;
+  market: string;
+  returnPct: number;
+  holdPct: number;
+  fills: number;
+  maxDrawdownPct: number;
+  from: number;
+  to: number;
+  equity: number[];
+  hold: number[];
+}
+
+/**
+ * Backtests every house template on every house market over the hourly closes we hold
+ * (live plus labelled backfill), putting the full $1,000 into each trade so the comparison with
+ * holding $1,000 is like for like. Used for the strategy cards and the track record chart.
+ */
+export async function showcase(db: D1Database, templates: Record<string, unknown>, markets: readonly string[], run: (rules: unknown, candles: { t: number; close: number }[]) => { returnPct: number; holdReturnPct: number; maxDrawdownPct: number; fills: { hour: number; side: string; price: number; usd: number; feeUsd: number }[] }): Promise<Showcase[]> {
+  const out: Showcase[] = [];
+  for (const m of markets) {
+    const rows = await closes(db, m, 720);
+    if (rows.length < 30) continue;
+    const candles = rows.map((r) => ({ t: r.hour, close: r.price }));
+    for (const [t, tpl] of Object.entries(templates)) {
+      const rules = { ...(tpl as object), market: m, sizeUsd: 1000 };
+      const r = run(rules, candles);
+      let cash = 1000, qty = 0, fi = 0;
+      const equity: number[] = [], hold: number[] = [];
+      for (const c of candles) {
+        while (fi < r.fills.length && r.fills[fi]!.hour === c.t) {
+          const f = r.fills[fi++]!;
+          if (f.side === "buy") { qty = (f.usd - f.feeUsd) / f.price; cash -= f.usd; } else { cash += f.usd - f.feeUsd; qty = 0; }
+        }
+        equity.push(cash + qty * c.close);
+        hold.push((1000 * c.close) / candles[0]!.close);
+      }
+      out.push({ template: t, market: m, returnPct: r.returnPct, holdPct: r.holdReturnPct, fills: r.fills.length, maxDrawdownPct: r.maxDrawdownPct, from: candles[0]!.t, to: candles[candles.length - 1]!.t, equity, hold });
+    }
+  }
+  return out;
+}
+
+export async function hoursOfPrices(db: D1Database): Promise<number> {
+  const r = await db.prepare("SELECT COUNT(DISTINCT hour) AS n FROM price_hourly WHERE status IN ('ok', 'backfill')").first<{ n: number }>();
+  return r?.n ?? 0;
+}

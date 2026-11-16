@@ -23,8 +23,8 @@
     {
       "id": "seal",
       "text": "Each hour's agent decisions are sealed on chain before the next hourly close.",
-      "status": "in_testing",
-      "proof": "packages/seal/test, contracts/test"
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/proof?hour=1794823200&subject=house-dip-hunter-nvda (76 leaves, on time)"
     },
     {
       "id": "tamper",
@@ -58,9 +58,9 @@
     },
     {
       "id": "agents",
-      "text": "House paper agents decide every hour.",
-      "status": "planned",
-      "proof": null
+      "text": "20 house paper agents decide every hour.",
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/agents"
     },
     {
       "id": "live_wallet",

@@ -41,11 +41,10 @@ export function layout(meta: PageMeta, body: string): string {
 <meta name="twitter:site" content="@Tauro_Agent">
 <meta name="theme-color" content="#f4efe6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12100d" media="(prefers-color-scheme: dark)">
-<link rel="preload" href="/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/css/site.css">
-<script>try{var t=localStorage.getItem("tauro-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("tauro-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <script type="module" src="/js/site.js"></script>
 ${(meta.scripts ?? []).map((s) => `<script type="module" src="${s}"></script>`).join("\n")}
 </head>
@@ -59,6 +58,7 @@ ${(meta.scripts ?? []).map((s) => `<script type="module" src="${s}"></script>`).
       <a class="icon-btn" href="https://github.com/tauroagent/tauro" aria-label="Source code on GitHub">${GH_ICON}</a>
       <a class="icon-btn" href="https://x.com/Tauro_Agent" aria-label="Tauro on X">${X_ICON}</a>
       <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch between light and dark">${THEME_ICON}</button>
+      <a class="btn sm hide-sm" href="/agents">See agents</a>
       <button class="icon-btn menu-btn" type="button" data-menu aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">${MENU_ICON}</button>
     </div>
   </div>
