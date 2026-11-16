@@ -165,6 +165,17 @@ export function renderVerify(): string {
     <ul class="checklist" data-verify-out><li><span class="mk">·</span><span>Choose an hour and press Verify.</span></li></ul>
     <details style="margin-top:16px"><summary style="font-weight:600;min-height:44px;display:flex;align-items:center">The record that was checked</summary><pre class="code" data-verify-record>Nothing yet.</pre></details>
   </div>
+</div></section>
+<section style="padding-top:0" id="fake"><div class="wrap">
+  <div class="card panel fake" data-fake hidden>
+    <p class="eyebrow">Try to fake a trade</p>
+    <h2>Change one number. Watch the proof break.</h2>
+    <p class="dim">This is the sealed record you just checked. Edit any value (a price, an action, a size), then check your edit against the same proof and the root on Robinhood Chain. Nothing you type leaves your browser except one read-only contract call.</p>
+    <label class="sr" for="fake-input">Sealed record</label>
+    <textarea id="fake-input" class="code" data-fake-input rows="14" spellcheck="false" autocomplete="off"></textarea>
+    <div class="ctas" style="margin-top:14px"><button class="btn" type="button" data-fake-run>Check my edit</button><button class="btn soft" type="button" data-fake-reset>Reset to the sealed record</button></div>
+    <ul class="checklist" data-fake-out style="margin-top:12px"></ul>
+  </div>
 </div></section>`;
   return layout({ title: "Verify · Tauro", description: "Rebuild any sealed decision in your browser and check it against the root on Robinhood Chain.", path: "/verify", scripts: ["/js/verify.js"] }, body);
 }

@@ -37,7 +37,7 @@ export function skyHero(m: HomeModel): string {
   <div class="hero-c">
     <h1 id="hero-h"><span class="ln"><span><span class="grad">Tauro</span> agents trade by rules,</span></span><span class="ln"><span>sealed every hour.</span></span></h1>
     <p class="lead">Paper trading agents for tokenized stocks on Robinhood Chain. Each hour they read Chainlink prices, decide to buy, sell or hold, and the decision is sealed on chain before the next close, so anyone can check it.</p>
-    <div class="ctas"><a class="btn" href="/studio">Replay a strategy</a><a class="btn soft" href="/agents">See live agents</a></div>
+    <div class="ctas"><a class="btn" href="/verify?fake=1#fake">Try to fake a trade</a><a class="btn soft" href="/agents">See live agents</a></div>
   </div>
   <div class="dash-wrap">
     <div class="dash-glow" aria-hidden="true"></div>
