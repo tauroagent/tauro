@@ -490,3 +490,6 @@ select:hover, input:hover { border-color: var(--ink-3); }
 .planet-surface.on { opacity: .9; }
 @keyframes spin-surface { to { background-position: -1800px 100%; } }
 @media (prefers-reduced-motion: reduce) { .planet-surface { animation: none; } }
+
+.foot .soc { gap: 10px; }
+.foot .soc svg { width: 17px; height: 17px; flex: none; color: var(--ink); }
