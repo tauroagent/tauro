@@ -5,7 +5,8 @@ import type { Hex } from "viem";
 import { HOUSE_MARKETS, runAgents } from "./agents.js";
 import { runIngest } from "./ingest.js";
 import { buildPending, sendPending } from "./seal-run.js";
-import { agentSummaries, closes, equitySeries, marketCards, recentDecisions, siteStats } from "./data.js";
+import { backtest, TEMPLATES } from "@tauro/engine";
+import { agentSummaries, closes, equitySeries, hoursOfPrices, marketCards, recentDecisions, showcase, siteStats } from "./data.js";
 import { renderHome, type HomeModel } from "./ui/home.js";
 import { renderAgent, renderAgents, renderMarket, renderMarkets, renderNotFound, renderStudio, renderVerify } from "./ui/pages.js";
 import { MARKETS, UNIVERSE_SOURCES } from "./universe.js";
@@ -57,10 +58,17 @@ const html = (body: string, status = 200, maxAge = 60): Response =>
   new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": `public, max-age=${maxAge}` } });
 
 async function homeModel(env: Env): Promise<HomeModel> {
-  const [stats, agents, decisions, markets] = await Promise.all([siteStats(env.DB), agentSummaries(env.DB), recentDecisions(env.DB, 40), marketCards(env.DB)]);
+  const [stats, agents, decisions, markets, hours, runs] = await Promise.all([
+    siteStats(env.DB),
+    agentSummaries(env.DB),
+    recentDecisions(env.DB, 40),
+    marketCards(env.DB),
+    hoursOfPrices(env.DB),
+    showcase(env.DB, TEMPLATES, HOUSE_MARKETS, (rules, candles) => backtest(rules as Parameters<typeof backtest>[0], candles, { feeBps: 50, lookback: 168, startUsd: 1000 })),
+  ]);
   const top = agents[0];
-  const featuredSeries = top ? (await closes(env.DB, top.market, 48)).map((c) => c.price) : [];
-  return { now: Math.floor(Date.now() / 1000), stats, agents, decisions, markets, featuredSeries, claims: status.claims };
+  const featuredSeries = (await closes(env.DB, top?.market ?? "SPY", 48)).map((c) => c.price);
+  return { now: Math.floor(Date.now() / 1000), stats, hoursOfPrices: hours, agents, decisions, markets, featuredSeries, showcase: runs, claims: status.claims };
 }
 
 const LLMS = `# Tauro
