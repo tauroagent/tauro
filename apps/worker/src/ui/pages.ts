@@ -27,13 +27,13 @@ export function renderAgents(agents: AgentSummary[]): string {
   const body = `<div class="page-head"><div class="wrap">
   <p class="eyebrow">Leaderboard</p>
   <h1>Agents</h1>
-  <p class="lead">Every agent, ranked by paper return since it started, next to buying its market at the start and holding. ${since ? `House agents started ${esc(since)}.` : ""} All of them are paper.</p>
+  <p class="lead">Every agent, ranked by paper return since it started, next to holding the same dollar amount of its market from the start. ${since ? `House agents started ${esc(since)}.` : ""} All of them are paper.</p>
 </div></div>
 <section style="padding-top:40px"><div class="wrap">
   ${
     agents.length
       ? `<div class="scroll"><table class="table">
-    <thead><tr><th scope="col"><span class="sr">Rank</span></th><th scope="col">Agent</th><th scope="col" class="hide-sm">Position</th><th scope="col" class="num">Value</th><th scope="col" class="num">Return</th><th scope="col" class="num hide-sm">Holding</th><th scope="col" class="num">vs holding</th><th scope="col" class="num hide-sm">Fills</th></tr></thead>
+    <thead><tr><th scope="col"><span class="sr">Rank</span></th><th scope="col">Agent</th><th scope="col" class="hide-sm">Position</th><th scope="col" class="num">Value</th><th scope="col" class="num">Return</th><th scope="col" class="num hide-sm">Holding same size</th><th scope="col" class="num">vs holding</th><th scope="col" class="num hide-sm">Fills</th></tr></thead>
     <tbody>${agentRows(agents)}</tbody></table></div>
   <p class="dim" style="font-size:13px;margin-top:12px">Each agent starts with $1,000 of paper money. Fills at the next hour's Chainlink close with a 0.5% fee, only while the feed is fresh. JSON: <a href="/api/v1/agents">/api/v1/agents</a></p>`
       : `<p class="state">The house agents make their first decision at the top of the next hour.</p>`
@@ -61,7 +61,8 @@ function rulesText(rules: { entry?: unknown[]; exit?: unknown[]; stopLossPct?: n
 
 export function renderAgent(a: AgentSummary, series: { hour: number; equity: number; price: number }[], decisions: DecisionRow[]): string {
   const eq = series.map((s) => s.equity);
-  const hold = a.start_price ? series.map((s) => (a.start_cash * s.price) / a.start_price!) : [];
+  const size = Math.min(a.start_cash, (a.rules as { sizeUsd?: number }).sizeUsd ?? a.start_cash);
+  const hold = a.start_price ? series.map((s) => a.start_cash - size + (size * s.price) / a.start_price!) : [];
   const log = decisions
     .map(
       (d) => `<li class="entry"><div class="head"><span class="who"><span class="act ${esc(d.action)}">${esc(d.action)}</span>${esc(utcStamp(d.hour))}</span><a class="proof" href="/verify?hour=${d.hour}&amp;subject=${encodeURIComponent(a.id)}">Proof</a></div><p>${esc(explain(d))}</p></li>`,
@@ -77,13 +78,13 @@ export function renderAgent(a: AgentSummary, series: { hour: number; equity: num
     <dl class="kpis" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-top:0">
       <div><dt>Value</dt><dd>${a.equity === null ? "n/a" : usd(a.equity)}</dd></div>
       <div><dt>Return</dt><dd class="${tone(a.return_pct)}">${pct(a.return_pct)}</dd></div>
-      <div><dt>Holding ${esc(a.market)}</dt><dd class="${tone(a.hold_return_pct)}">${pct(a.hold_return_pct)}</dd></div>
+      <div><dt>Holding same size</dt><dd class="${tone(a.hold_return_pct)}">${pct(a.hold_return_pct)}</dd></div>
       <div><dt>vs holding</dt><dd class="${tone(a.vs_hold_pts)}">${pts(a.vs_hold_pts)}</dd></div>
     </dl>
     <div class="card panel" style="margin-top:20px">
       <h2>Value over time</h2>
       ${eq.length > 1 ? lineChart(eq, hold, 720, 280, `${agentName(a)} paper value compared with holding ${a.market}`) : '<p class="state">The chart starts after the agent\'s second hour.</p>'}
-      <div class="legend"><span><i></i>This agent</span><span><i class="b"></i>Holding ${esc(a.market)} from the start</span></div>
+      <div class="legend"><span><i></i>This agent</span><span><i class="b"></i>Holding the same $${size} of ${esc(a.market)} from the start</span></div>
     </div>
     <div class="card panel" style="margin-top:20px">
       <h2>Decision log</h2>
@@ -181,13 +182,13 @@ export function renderStudio(): string {
     <div class="field"><label for="s-market">Stock token</label><select id="s-market" name="market">${opts}</select></div>
     <div class="field"><label for="s-stop">Stop loss, %</label><input id="s-stop" name="stop" type="number" min="0.5" max="50" step="0.5" value="3"></div>
     <div class="field"><label for="s-size">Order size, USD of $1,000</label><input id="s-size" name="size" type="number" min="10" max="1000" step="10" value="100"></div>
-    <p class="dim" style="font-size:13px;margin:0">Fills at the next hour's close with a 0.5% fee per fill, like the house agents. Past results do not predict future ones.</p>
+    <p class="dim" style="font-size:13px;margin:0">Fills at the next hour's close with a 0.5% fee per fill, like the house agents. The comparison holds the same dollar amount from the first hour and keeps the rest in cash. Past results do not predict future ones.</p>
   </form>
   <div class="card panel" aria-live="polite" data-studio-out>
     <p class="dim" style="margin:0" data-range>Loading hourly closes…</p>
     <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:end;margin:14px 0 6px">
       <div><div class="dim" style="font-size:13px">This strategy</div><div class="big-result" data-ret>…</div></div>
-      <div><div class="dim" style="font-size:13px">Holding instead</div><div style="font:400 30px/1 var(--serif)" data-hold>…</div></div>
+      <div><div class="dim" style="font-size:13px">Holding the same amount</div><div style="font:400 30px/1 var(--serif)" data-hold>…</div></div>
     </div>
     <div data-chart></div>
     <div class="legend"><span><i></i>Strategy</span><span><i class="b"></i>Holding</span></div>

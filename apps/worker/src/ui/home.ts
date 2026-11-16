@@ -152,7 +152,7 @@ function leaderboard(m: HomeModel): string {
   <div class="wrap">
     <div class="sec-head">
       <div><p class="eyebrow">Leaderboard</p><h2>Every agent next to <em>just holding.</em></h2></div>
-      <p>Return on paper since each agent started, compared with buying its market at the start and doing nothing. Fees of 0.5% per fill are included. <a href="/agents">Full leaderboard</a></p>
+      <p>Return on paper since each agent started, compared with putting the same dollar amount into its market at the start and doing nothing. Fees of 0.5% per fill are included. <a href="/agents">Full leaderboard</a></p>
     </div>
     <div class="scroll"><table class="table">
       <thead><tr><th scope="col"><span class="sr">Rank</span></th><th scope="col">Agent</th><th scope="col" class="hide-sm">Position</th><th scope="col" class="num">Return</th><th scope="col" class="num">vs holding</th><th scope="col" class="num hide-sm">Fills</th></tr></thead>
