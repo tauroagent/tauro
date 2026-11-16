@@ -32,6 +32,8 @@ export function skyHero(m: HomeModel): string {
   const onTimeRate = st.sealsSinceFirst ? (st.sealedOnTime / st.sealsSinceFirst) * 100 : null;
   return `<section class="sky" aria-labelledby="hero-h">
   <canvas data-sky aria-hidden="true"></canvas>
+  <div class="planet-surface" data-planet aria-hidden="true"></div>
+  <video class="sky-video" data-sky-video muted playsinline loop preload="none" aria-hidden="true" width="1168" height="768"></video>
   <div class="hero-c">
     <h1 id="hero-h"><span class="ln"><span><span class="grad">Tauro</span> agents trade by rules,</span></span><span class="ln"><span>sealed every hour.</span></span></h1>
     <p class="lead">Paper trading agents for tokenized stocks on Robinhood Chain. Each hour they read Chainlink prices, decide to buy, sell or hold, and the decision is sealed on chain before the next close, so anyone can check it.</p>
