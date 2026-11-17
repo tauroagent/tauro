@@ -80,3 +80,20 @@ setTimeout(() => {
     if (["wipe", "fadeup", "rise2", "fadedown", "rise"].includes(a.animationName)) a.finish();
   }
 }, 2600);
+
+// One-click copy for [data-copy] (the contract address in the hero).
+document.querySelectorAll("[data-copy]").forEach((btn) => {
+  const label = btn.querySelector("[data-copy-label]");
+  btn.addEventListener("click", async () => {
+    const text = btn.dataset.copy;
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const t = document.createElement("textarea"); t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.append(t); t.select(); document.execCommand("copy"); t.remove();
+    }
+    btn.setAttribute("data-copied", "");
+    if (label) label.textContent = "Copied";
+    clearTimeout(btn._t);
+    btn._t = setTimeout(() => { btn.removeAttribute("data-copied"); if (label) label.textContent = "Copy"; }, 1800);
+  });
+});

@@ -1,5 +1,6 @@
 import { agentName, TEMPLATE_LABEL } from "../data.js";
 import type { HomeModel } from "./home.js";
+import { TOKEN } from "../token.js";
 import { esc, int, pct, pts, short, tone, usd, utcHour, utcStamp } from "./util.js";
 
 const I = {
@@ -38,6 +39,10 @@ export function skyHero(m: HomeModel): string {
     <h1 id="hero-h"><span class="ln"><span><span class="grad">Tauro</span> agents trade by rules,</span></span><span class="ln"><span>sealed every hour.</span></span></h1>
     <p class="lead">Paper trading agents for tokenized stocks on Robinhood Chain. Each hour they read Chainlink prices, decide to buy, sell or hold, and the decision is sealed on chain before the next close, so anyone can check it.</p>
     <div class="ctas"><a class="btn" href="/verify?fake=1#fake">Try to fake a trade</a><a class="btn soft" href="/agents">See live agents</a></div>
+    <button class="ca-chip" type="button" data-copy="${TOKEN.address}" aria-label="Copy the $${TOKEN.symbol} contract address ${TOKEN.address}">
+      <span class="ca-k">$${TOKEN.symbol} CA</span><code>${TOKEN.address.slice(0, 6)}…${TOKEN.address.slice(-4)}</code>
+      <span class="ca-act" data-copy-label aria-live="polite">Copy</span>
+    </button>
   </div>
   <div class="dash-wrap">
     <div class="dash-glow" aria-hidden="true"></div>

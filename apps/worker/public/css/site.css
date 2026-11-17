@@ -407,6 +407,15 @@ select:hover, input:hover { border-color: var(--ink-3); }
 @keyframes wipe { from { transform: translateY(105%); } to { transform: none; } }
 .sky .lead { margin: 22px auto 0; max-width: 64ch; color: #b5b2ba; font-size: clamp(15px, 1.25vw, 17.5px); animation: fadeup .8s .35s both; }
 .sky .ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; animation: fadeup .8s .5s both; }
+.sky .ca-chip { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; margin-top: 18px; padding: 0 6px 0 16px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12); background: rgba(14,13,20,.72); backdrop-filter: blur(8px); color: #d9d6de; font: 500 14px/1 var(--sans);
+  cursor: pointer; animation: fadeup .8s .6s both; transition: border-color .15s ease, background .15s ease; }
+.sky .ca-chip:hover { border-color: rgba(190,120,255,.55); background: rgba(22,18,32,.85); }
+.sky .ca-chip:focus-visible { outline: 2px solid #b066ff; outline-offset: 3px; }
+.sky .ca-chip .ca-k { color: #b98cff; font-weight: 600; letter-spacing: .02em; }
+.sky .ca-chip code { font: 500 14px/1 var(--mono); color: #f7f7f8; }
+.sky .ca-chip .ca-act { display: inline-grid; place-items: center; min-width: 72px; height: 32px; padding: 0 12px; border-radius: 999px; background: rgba(147,18,255,.22); color: #e6d6ff; font-weight: 600; font-size: 13px; }
+.sky .ca-chip[data-copied] .ca-act { background: rgba(69,181,88,.22); color: #9be8a6; }
 @keyframes fadeup { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .top { animation: fadedown .7s both; }
 @keyframes fadedown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
@@ -467,7 +476,7 @@ select:hover, input:hover { border-color: var(--ink-3); }
 .tag.paper, .pill.red, .tagc.seal { background: rgba(147,18,255,.18); color: #d6aaff; }
 
 @media (prefers-reduced-motion: reduce) {
-  .sky h1 .ln > span, .sky .lead, .sky .ctas, .dash-wrap, .dash > *, .top { animation: none; }
+  .sky h1 .ln > span, .sky .lead, .sky .ctas, .sky .ca-chip, .dash-wrap, .dash > *, .top { animation: none; }
 }
 @media (max-width: 1080px) {
   .dash { grid-template-columns: minmax(0, 1fr); }
