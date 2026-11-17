@@ -38,4 +38,4 @@ Invariants that must not break:
 - **Every public claim lives in `status.json`.** If you add a feature to the README, add its claim there, or `check:claims` fails.
 - No secrets in the repo. CI runs gitleaks over the full history.
 
-Commit messages read `area: what changed, in plain words`. Commits made with AI assistance carry a `Co-Authored-By` trailer.
+Commit messages read `area: what changed, in plain words`.

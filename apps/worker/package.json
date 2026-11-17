@@ -12,12 +12,12 @@
     "build:client": "esbuild src/client/verify.ts src/client/studio.ts --bundle --format=esm --minify --target=es2022 --outdir=public/js"
   },
   "dependencies": {
-    "viem": "^2.38.0",
+    "@tauro/engine": "*",
     "@tauro/seal": "*",
-    "@tauro/engine": "*"
+    "viem": "^2.38.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251101.0",
+    "@cloudflare/workers-types": "^5.20261114.1",
     "wrangler": "^4.45.0"
   }
 }

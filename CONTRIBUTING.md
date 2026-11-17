@@ -7,10 +7,6 @@
 - Commits read `Area: what changed, in plain words`. Failed experiments get their own commit; they are not deleted.
 - No backdated commits, no squashing of main, no generated data committed on a timer. Hourly data lives in the database and on chain, not in git.
 
-## AI assistance
-
-This project is built with AI coding assistance. Commits made with it carry a `Co-Authored-By` trailer. Every change is tested before it lands, and the tests are the review bar, not the author.
-
 ## Checks before a pull request
 
 ```bash

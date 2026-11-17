@@ -74,7 +74,7 @@ sequenceDiagram
 | `apps/worker` | Cloudflare Worker behind tauroagent.com: hourly Chainlink ingest (cron), house paper agents, hourly sealing, D1 storage, read API, site, `/verify` and `/studio` in the browser. |
 | `contracts` | `SealRegistry.sol` and its Solidity tests (Hardhat 3, forge-std). |
 | `tools` | Claim checker, golden-vector generator. |
-| `AGENTS.md`, `llms-install.md` | Notes for AI coding agents, and step-by-step use of the API by an assistant. |
+| `AGENTS.md`, `llms-install.md` | Notes for coding agents, and step-by-step use of the read API by an assistant. |
 | `status.json` | Every public claim and its status. |
 
 ## Read API
@@ -113,4 +113,4 @@ npx tsx tools/gen-golden.ts   # regenerate the TS -> Solidity vectors
 
 ## License
 
-[MIT](LICENSE). Built with AI assistance; see [CONTRIBUTING.md](CONTRIBUTING.md).
+[MIT](LICENSE). Contributions: see [CONTRIBUTING.md](CONTRIBUTING.md).
