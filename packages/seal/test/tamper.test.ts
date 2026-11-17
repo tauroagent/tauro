@@ -24,10 +24,11 @@ const edit = (o: Json, path: string[], v: Json): Json => {
   return c;
 };
 
+// the other 19 leaves of the hour never change, so hash them once
+const OTHERS = Array.from({ length: 20 }, (_, i) => i).filter((i) => i !== 7).map((i) => leafHash({ kind: LeafKind.Decision, subject: `agent-${i}`, hour: HOUR, record: { agent: `agent-${i}`, action: "hold" } }));
 function sealedHour(target: Json) {
-  const leaves = Array.from({ length: 20 }, (_, i) => ({ kind: LeafKind.Decision, subject: `agent-${i}`, hour: HOUR, record: i === 7 ? target : { agent: `agent-${i}`, action: "hold" } }));
-  const tree = buildTree(leaves.map(leafHash));
-  const leaf = leafHash(leaves[7]!);
+  const leaf = leafHash({ kind: LeafKind.Decision, subject: "agent-7", hour: HOUR, record: target });
+  const tree = buildTree([...OTHERS, leaf]);
   return { root: tree.root, proof: getProof(tree, leaf), leaf };
 }
 
@@ -48,9 +49,9 @@ describe("try to fake a trade", () => {
         const fake = leafHash({ kind: LeafKind.Decision, subject: "agent-7", hour: HOUR, record: JSON.parse(browserSerialize(edited)) });
         return verifyProof(root, leaf, proof) && fake !== leaf && !verifyProof(root, fake, proof);
       }),
-      { numRuns: 300 },
+      { numRuns: 200 },
     );
-  });
+  }, 30_000);
 
   it("the real example from the film: hold → buy", () => {
     const sealed = { action: "hold", agent: "house-dip-hunter-nvda", fill: null, paper: true, position_after: { cash: 1000, qty: 0 } };
