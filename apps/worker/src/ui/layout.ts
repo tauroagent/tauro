@@ -1,4 +1,5 @@
 import { esc } from "./util.js";
+import { TOKEN } from "../token.js";
 
 export interface PageMeta {
   title: string;
@@ -74,7 +75,8 @@ ${body}
     <div><h4>Product</h4><ul><li><a href="/agents">Agents</a></li><li><a href="/markets">Markets</a></li><li><a href="/studio">Studio</a></li><li><a href="/verify">Verify an hour</a></li></ul></div>
     <div><h4>Open data</h4><ul><li><a href="/api/v1">Read API</a></li><li><a href="/api/v1/seals">Seals</a></li><li><a href="/api/v1/status">Claims</a></li><li><a href="/llms.txt">llms.txt</a></li></ul></div>
     <div><h4>Source</h4><ul><li><a class="soc" href="https://github.com/tauroagent/tauro">${GH_ICON}<span>GitHub</span></a></li><li><a href="https://repo.sourcify.dev/4663/0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14">SealRegistry source</a></li><li><a class="soc" href="https://x.com/Tauro_Agent">${X_ICON}<span>X (@Tauro_Agent)</span></a></li></ul></div>
-    <p class="legal">Paper trading only: no agent here trades real money yet. Not investment advice. Not available to US persons. Built on Robinhood Chain, not affiliated with or endorsed by Robinhood, Chainlink or Uniswap. MIT licensed.</p>
+    <p class="token-ca"><span>$${TOKEN.symbol} on ${TOKEN.chain}</span> <code>${TOKEN.address}</code></p>
+    <p class="legal">Only this address is ours. The token does not share in agent results or pay anything. Paper trading only: no agent here trades real money yet. Not investment advice. Not available to US persons. Built on Robinhood Chain, not affiliated with or endorsed by Robinhood, Chainlink or Uniswap. MIT licensed.</p>
   </div>
 </footer>
 </body>

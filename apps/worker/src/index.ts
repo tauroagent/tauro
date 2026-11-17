@@ -1,3 +1,4 @@
+import { TOKEN } from "./token.js";
 import status from "../../../status.json";
 import { client } from "./chain.js";
 import { buildTree, getProof } from "@tauro/seal";
@@ -205,6 +206,8 @@ async function handle(req: Request, env: Env): Promise<Response> {
       return json(status, { maxAge: 300 });
     case "/version":
       return json({ git_sha: env.GIT_SHA ?? null, repository: "https://github.com/tauroagent/tauro" }, { maxAge: 300 });
+    case "/.well-known/tauro.json":
+      return json({ token: TOKEN, site: "https://tauroagent.com", x: "https://x.com/Tauro_Agent", repository: "https://github.com/tauroagent/tauro" }, { maxAge: 300 });
     case "/robots.txt":
       return new Response("User-agent: *\nAllow: /\nDisallow: /api/\n", { headers: { "content-type": "text/plain" } });
     default: {
