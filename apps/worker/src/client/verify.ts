@@ -1,5 +1,6 @@
 // Runs in the browser. Rebuilds a sealed leaf from its public record and checks it against the
 // root stored in SealRegistry, read straight from a public Robinhood Chain RPC.
+import { canonicalize } from "@tauro/seal/canonical";
 import { concat, decodeFunctionResult, encodeAbiParameters, encodeFunctionData, keccak256, stringToBytes, type Hex } from "viem";
 
 const REGISTRY = "0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14";
@@ -59,13 +60,8 @@ const fakeOut = document.querySelector<HTMLUListElement>("[data-fake-out]")!;
 type Proof = { kind: number; subject: string; hour: number; record_canonical: string; leaf: Hex; proof: Hex[]; root: Hex };
 let sealed: Proof | null = null;
 
-// The sealed bytes are a JSON string; find the serializer that reproduces them exactly, so an
-// untouched record re-serializes to the same bytes and only real edits change the leaf.
-const sortKeys = (v: unknown): unknown => Array.isArray(v) ? v.map(sortKeys) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v as object).sort().map((k) => [k, sortKeys((v as Record<string, unknown>)[k])])) : v;
-function serializer(canonical: string): (o: unknown) => string {
-  const o = JSON.parse(canonical);
-  return JSON.stringify(sortKeys(o)) === canonical ? (x) => JSON.stringify(sortKeys(x)) : (x) => JSON.stringify(x);
-}
+// Edits are re-encoded with the same canonical JSON the server seals with, so an untouched record
+// gives the sealed bytes again and only a real edit changes the leaf.
 const leafOf = (p: Proof, canonical: string): Hex => keccak256(keccak256(encodeAbiParameters([{ type: "uint8" }, { type: "bytes32" }, { type: "uint64" }, { type: "bytes32" }], [p.kind, keccak256(stringToBytes(p.subject)), BigInt(p.hour), keccak256(stringToBytes(canonical))])));
 const walk = (leaf: Hex, proof: Hex[]): Hex => proof.reduce<Hex>((h, s) => (BigInt(h) < BigInt(s) ? keccak256(concat([h, s])) : keccak256(concat([s, h]))), leaf);
 
@@ -75,8 +71,8 @@ async function checkEdit(): Promise<void> {
   if (!sealed) return;
   fakeOut.innerHTML = "";
   let edited: string;
-  try { edited = serializer(sealed.record_canonical)(JSON.parse(fakeIn.value)); }
-  catch { fakeLine(false, "That is not valid JSON any more", "Keep the quotes, commas and braces; change only a value."); return; }
+  try { edited = canonicalize(JSON.parse(fakeIn.value)); }
+  catch { fakeLine(false, "That is not a valid record any more", "Keep the quotes, commas and braces, and use finite numbers; change only a value."); return; }
   const changed = edited !== sealed.record_canonical;
   const leaf = leafOf(sealed, edited);
   const root = walk(leaf, sealed.proof);
