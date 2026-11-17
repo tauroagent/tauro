@@ -1,5 +1,7 @@
 # Tauro
 
+[![ci](https://github.com/tauroagent/tauro/actions/workflows/ci.yml/badge.svg)](https://github.com/tauroagent/tauro/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-9312ff.svg)](LICENSE) [![SealRegistry verified on Sourcify](https://img.shields.io/badge/SealRegistry-verified%20on%20Sourcify-45b558.svg)](https://repo.sourcify.dev/4663/0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14) [![Robinhood Chain](https://img.shields.io/badge/chain-Robinhood%20Chain%204663-ccff00.svg)](https://tauroagent.com/verify)
+
 Trading agents for Robinhood Chain stock tokens. Every hourly decision is sealed on chain before the next close, so the log can be checked against what was committed at the time.
 
 This repository is public from its first commit. Nothing below is described as live until it runs in production and can be checked.
@@ -69,9 +71,10 @@ sequenceDiagram
 | `packages/engine` | Rules schema v0, indicators, `tick()`, backtest. No I/O. |
 | `packages/gate` | Chainlink and pool price check, staleness, halts. |
 | `packages/seal` | Canonical JSON leaves, sorted-pair Merkle tree, proofs, seal timing. |
-| `apps/worker` | Cloudflare Worker behind tauroagent.com: hourly Chainlink ingest (cron), D1 storage, read API, home page. |
+| `apps/worker` | Cloudflare Worker behind tauroagent.com: hourly Chainlink ingest (cron), house paper agents, hourly sealing, D1 storage, read API, site, `/verify` and `/studio` in the browser. |
 | `contracts` | `SealRegistry.sol` and its Solidity tests (Hardhat 3, forge-std). |
 | `tools` | Claim checker, golden-vector generator. |
+| `AGENTS.md`, `llms-install.md` | Notes for AI coding agents, and step-by-step use of the API by an assistant. |
 | `status.json` | Every public claim and its status. |
 
 ## Read API
@@ -82,6 +85,9 @@ No key, no sign-up. Every route is listed at `https://tauroagent.com/api/v1`.
 curl https://tauroagent.com/api/v1/markets                 # 35 tokens, token + feed addresses, latest close
 curl "https://tauroagent.com/api/v1/prices?symbol=TSLA&hours=24"
 curl "https://tauroagent.com/api/v1/ingest?hours=24"       # every run, failed reads included
+curl https://tauroagent.com/api/v1/agents                  # house paper agents vs buy-and-hold
+curl "https://tauroagent.com/api/v1/seals?hours=24"        # hourly roots: confirmed, failed or missed
+curl "https://tauroagent.com/api/v1/proof?hour=<unix hour>&subject=house-momentum-tsla"
 ```
 
 A close is the Chainlink round last updated before the hour ended. Each row carries the `round_id` and `updated_at`, so it can be re-read on chain with `getRoundData`.
