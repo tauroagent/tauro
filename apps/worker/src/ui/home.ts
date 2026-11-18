@@ -284,7 +284,7 @@ function roadmap(m: HomeModel): string {
     <p class="eyebrow">Roadmap</p>
     <h2>What's live, <span class="grad">what's next</span></h2>
     <p class="lead">Each item takes its status from status.json, the same file as the table below. No dates: a planned item moves to live when its proof is public.</p>
-    <div class="road">${col("live", "", "Live")}${col("in_testing", "test", "In testing")}${col("planned", "plan", "Planned, not built")}</div>
+    <div class="road">${col("live", "", "Live")}${col("in_testing", "test", "In testing")}${col("planned", "plan", "Planned")}</div>
   </div>
 </div>`;
 }
