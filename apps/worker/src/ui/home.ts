@@ -279,7 +279,7 @@ function roadmap(m: HomeModel): string {
     if (!items.length) return "";
     return `<div class="c"><span class="st ${cls}">${esc(title)}</span><ul class="road-list">${items.map(([, h, p]) => `<li><h3>${esc(h)}</h3><p>${esc(p)}</p></li>`).join("")}</ul></div>`;
   };
-  return `<div class="panel-dark" style="padding-top:96px">
+  return `<div class="panel-dark" id="roadmap" style="padding-top:96px">
   <div class="wrap">
     <p class="eyebrow">Roadmap</p>
     <h2>What's live, <span class="grad">what's next</span></h2>
