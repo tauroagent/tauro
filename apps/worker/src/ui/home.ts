@@ -274,11 +274,10 @@ const ROAD: [string, string, string][] = [
 
 function roadmap(m: HomeModel): string {
   const status = new Map(m.claims.map((c) => [c.id, c.status]));
-  const count = (s: string) => m.claims.filter((c) => c.status === s).length;
   const col = (s: string, cls: string, title: string) => {
     const items = ROAD.filter(([id]) => status.get(id) === s);
     if (!items.length) return "";
-    return `<div class="c"><span class="st ${cls}">${esc(title)} · ${count(s)}</span><ul class="road-list">${items.map(([, h, p]) => `<li><h3>${esc(h)}</h3><p>${esc(p)}</p></li>`).join("")}</ul></div>`;
+    return `<div class="c"><span class="st ${cls}">${esc(title)}</span><ul class="road-list">${items.map(([, h, p]) => `<li><h3>${esc(h)}</h3><p>${esc(p)}</p></li>`).join("")}</ul></div>`;
   };
   return `<div class="panel-dark" style="padding-top:96px">
   <div class="wrap">
