@@ -65,14 +65,14 @@
     {
       "id": "holder_slots",
       "text": "Holding 1,000,000 TAURO unlocks one slot for your own paper agent, 5,000,000 unlocks three. Balances are read on chain at every hourly run.",
-      "status": "in_testing",
-      "proof": "apps/worker/test/holders.test.ts, https://tauroagent.com/token"
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/tier?address=0x…, POST https://tauroagent.com/api/v1/agents/launch, https://tauroagent.com/token, apps/worker/test/holders.test.ts"
     },
     {
       "id": "burn_slots",
       "text": "Burning 1,000,000 TAURO to the dead address adds one slot for 30 days. Each burn is checked on chain and listed publicly.",
-      "status": "in_testing",
-      "proof": "apps/worker/test/holders.test.ts, https://tauroagent.com/api/v1/burns"
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/burns, apps/worker/test/holders.test.ts"
     },
     {
       "id": "live_wallet",

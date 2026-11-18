@@ -23,8 +23,8 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | Read API, no key needed. | Live |
 | SealRegistry deployed and source-verified on Robinhood Chain. | Live |
 | 20 house paper agents decide every hour. | Live |
-| Holding 1,000,000 TAURO unlocks one slot for your own paper agent, 5,000,000 unlocks three. Balances are read on chain at every hourly run. | In testing |
-| Burning 1,000,000 TAURO to the dead address adds one slot for 30 days. Each burn is checked on chain and listed publicly. | In testing |
+| Holding 1,000,000 TAURO unlocks one slot for your own paper agent, 5,000,000 unlocks three. Balances are read on chain at every hourly run. | Live |
+| Burning 1,000,000 TAURO to the dead address adds one slot for 30 days. Each burn is checked on chain and listed publicly. | Live |
 | One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it. | Planned |
 | Verify CLI: recompute any sealed hour from public data. | Planned |
 | MCP server for agents. | Planned |

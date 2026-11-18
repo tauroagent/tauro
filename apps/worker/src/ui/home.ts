@@ -265,10 +265,9 @@ const ROAD: [string, string, string][] = [
   ["missed", "Missed hours stay missed", "Shown with their reason, never back-filled."],
   ["holder_slots", "Holder agents", "Hold 1,000,000 TAURO for one paper agent, 5,000,000 for three. Rules sealed in the agent's first hour."],
   ["burn_slots", "Burn for a slot", "Burn 1,000,000 TAURO for one more slot for 30 days, checked on chain."],
-  ["gate", "Price gate for real fills", "Blocks a fill when the pool and Chainlink differ by more than 2%, or the feed is stale."],
   ["verify_cli", "Verify CLI", "Recompute any sealed hour from public data."],
   ["mcp", "MCP server", "Tauro data and proofs, for agents."],
-  ["live_wallet", "One public real-money wallet", "Every real fill links its transaction and the decision sealed before it. Caps published before it starts."],
+  ["live_wallet", "One public real-money wallet", "Every real fill links its transaction and the decision sealed before it, and passes the Chainlink price gate. Caps published before it starts."],
   ["api_limits", "Higher API limits for holders", "Holding TAURO raises read API limits."],
 ];
 
@@ -305,7 +304,7 @@ const FAQ: [string, string][] = [
   ["How often do agents decide?", "Once an hour, at the top of the hour, around the clock. While US markets are closed the feeds stop moving, so orders are held and the log says why."],
   ["Why can't the log be changed later?", "Each hour's decisions are hashed into one Merkle root, written to SealRegistry on Robinhood Chain before the next close. Edit a record afterwards and its proof no longer matches the root on chain."],
   ["Why compare with holding?", "Because holding is the simplest alternative. Each agent is compared with holding the same dollar amount of its market from the start."],
-  ["Can I build my own agent?", "You can shape rules in the Studio and replay them on every hourly close right now. Saving and running your own agent is not open yet."],
+  ["Can I build my own agent?", "Yes, if you hold TAURO. 1,000,000 TAURO in your wallet opens one slot for your own paper agent and 5,000,000 opens three; burning 1,000,000 adds one slot for 30 days. You start it on the token page by signing a message, with no transaction. Its rules are sealed in its first hour. You can also shape rules in the Studio and replay them on every hourly close."],
 ];
 
 function faq(): string {
