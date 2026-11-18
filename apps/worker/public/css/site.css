@@ -270,7 +270,12 @@ section { padding: 112px 0; }
 .road { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 48px; padding-bottom: 96px; }
 .road .c { border-radius: 20px; padding: 24px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); }
 .road .c .st { display: inline-flex; height: 26px; align-items: center; padding: 0 10px; border-radius: 999px; font: 600 12px var(--sans); background: rgba(99,196,143,.15); color: #63c48f; }
-.road .c .st.plan { background: rgba(236,149,94,.14); color: #ec955e; }
+.road .c .st.test { background: rgba(236,149,94,.14); color: #ec955e; }
+.road .c .st.plan { background: rgba(255,255,255,.08); color: var(--panel-ink-2); }
+.road-list { list-style: none; margin: 8px 0 0 !important; padding: 0 !important; }
+.road-list li { padding: 14px 0; border-top: 1px solid rgba(255,255,255,.08); }
+.road-list li:first-child { border-top: 0; }
+.road-list h3 { font-size: 17px; margin: 0 0 4px !important; }
 .road .c h3 { color: var(--panel-ink); margin: 16px 0 8px; }
 .road .c p { color: var(--panel-ink-2); font-size: 14.5px; margin: 0; }
 .road .c ul { margin: 14px 0 0; padding-left: 18px; color: var(--panel-ink-2); font-size: 14px; }

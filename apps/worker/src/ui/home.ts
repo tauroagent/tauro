@@ -256,18 +256,36 @@ function leaderboard(m: HomeModel): string {
 </section>`;
 }
 
+// Roadmap items, keyed by status.json claim id. The column each one lands in is its status in status.json,
+// so an item moves from Planned to Live only when the claim file says so.
+const ROAD: [string, string, string][] = [
+  ["seal", "Hourly seals on chain", "Decisions and closes sealed in SealRegistry before the next close, with a proof for every leaf."],
+  ["agents", "20 house paper agents", "Four strategies on SPY, QQQ, NVDA, TSLA and AAPL, each compared with holding."],
+  ["api", "Read API, no key", "Prices, seals, proofs, agents and decisions, open to anyone."],
+  ["missed", "Missed hours stay missed", "Shown with their reason, never back-filled."],
+  ["holder_slots", "Holder agents", "Hold 1,000,000 TAURO for one paper agent, 5,000,000 for three. Rules sealed in the agent's first hour."],
+  ["burn_slots", "Burn for a slot", "Burn 1,000,000 TAURO for one more slot for 30 days, checked on chain."],
+  ["gate", "Price gate for real fills", "Blocks a fill when the pool and Chainlink differ by more than 2%, or the feed is stale."],
+  ["verify_cli", "Verify CLI", "Recompute any sealed hour from public data."],
+  ["mcp", "MCP server", "Tauro data and proofs, for agents."],
+  ["live_wallet", "One public real-money wallet", "Every real fill links its transaction and the decision sealed before it. Caps published before it starts."],
+  ["api_limits", "Higher API limits for holders", "Holding TAURO raises read API limits."],
+];
+
 function roadmap(m: HomeModel): string {
-  const live = m.claims.filter((c) => c.status === "live").length;
+  const status = new Map(m.claims.map((c) => [c.id, c.status]));
+  const count = (s: string) => m.claims.filter((c) => c.status === s).length;
+  const col = (s: string, cls: string, title: string) => {
+    const items = ROAD.filter(([id]) => status.get(id) === s);
+    if (!items.length) return "";
+    return `<div class="c"><span class="st ${cls}">${esc(title)} · ${count(s)}</span><ul class="road-list">${items.map(([, h, p]) => `<li><h3>${esc(h)}</h3><p>${esc(p)}</p></li>`).join("")}</ul></div>`;
+  };
   return `<div class="panel-dark" style="padding-top:96px">
   <div class="wrap">
     <p class="eyebrow">Roadmap</p>
     <h2>What's live, <span class="grad">what's next</span></h2>
-    <p class="lead">${live} public claims are live today, each linked to its proof. Everything else is labelled planned until it ships and can be checked.</p>
-    <div class="road">
-      <div class="c"><span class="st">Live</span><h3>Hourly seals on chain</h3><p>Closes, decisions and status sealed every hour in SealRegistry, source verified, with a proof for every leaf.</p><ul><li>Verify in your browser</li><li>Missed hours stay missed</li></ul></div>
-      <div class="c"><span class="st">Live</span><h3>House paper agents</h3><p>Four strategies on SPY, QQQ, NVDA, TSLA and AAPL, deciding every hour against holding.</p><ul><li>Rules sealed at creation</li><li>Fees on every fill</li></ul></div>
-      <div class="c"><span class="st plan">Planned, not built</span><h3>One public real-money wallet</h3><p>A single wallet trading small size, where every fill links its transaction and the sealed decision before it.</p><ul><li>Caps published before it starts</li><li>Shown here only once it trades</li></ul></div>
-    </div>
+    <p class="lead">Each item takes its status from status.json, the same file as the table below. No dates: a planned item moves to live when its proof is public.</p>
+    <div class="road">${col("live", "", "Live")}${col("in_testing", "test", "In testing")}${col("planned", "plan", "Planned, not built")}</div>
   </div>
 </div>`;
 }
