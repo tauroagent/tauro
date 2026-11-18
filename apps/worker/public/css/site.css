@@ -510,3 +510,14 @@ select:hover, input:hover { border-color: var(--ink-3); }
 .fake textarea:focus-visible { outline: 2px solid var(--accent, #9312ff); outline-offset: 2px; }
 .fake .ctas { display: flex; flex-wrap: wrap; gap: 10px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* $TAURO slots page and the studio launch panel */
+.cards3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 760px) { .cards3 { grid-template-columns: 1fr; } }
+.holder-ok { color: #9be8a6; }
+.holder-err { color: #ff9d9d; }
+[data-tier-out] dl, [data-holder] dl { margin: 0; }
+.how-list { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 12px; max-width: 760px; color: #d9d6de; line-height: 1.55; }
+.how-list b { color: #fff; font-weight: 600; }
+.how-list code { overflow-wrap: anywhere; }
+[hidden] { display: none !important; }

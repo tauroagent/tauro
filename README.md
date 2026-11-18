@@ -23,9 +23,12 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | Read API, no key needed. | Live |
 | SealRegistry deployed and source-verified on Robinhood Chain. | Live |
 | 20 house paper agents decide every hour. | Live |
+| Holding 1,000,000 TAURO unlocks one slot for your own paper agent, 5,000,000 unlocks three. Balances are read on chain at every hourly run. | In testing |
+| Burning 1,000,000 TAURO to the dead address adds one slot for 30 days. Each burn is checked on chain and listed publicly. | In testing |
 | One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it. | Planned |
 | Verify CLI: recompute any sealed hour from public data. | Planned |
 | MCP server for agents. | Planned |
+| Holding TAURO raises read API limits. | Planned |
 <!-- status:end -->
 
 ## Addresses (Robinhood Chain, 4663)
@@ -88,9 +91,21 @@ curl "https://tauroagent.com/api/v1/ingest?hours=24"       # every run, failed r
 curl https://tauroagent.com/api/v1/agents                  # house paper agents vs buy-and-hold
 curl "https://tauroagent.com/api/v1/seals?hours=24"        # hourly roots: confirmed, failed or missed
 curl "https://tauroagent.com/api/v1/proof?hour=<unix hour>&subject=house-momentum-tsla"
+curl "https://tauroagent.com/api/v1/tier?address=<wallet>"  # TAURO held, holder agent slots, agents
+curl https://tauroagent.com/api/v1/burns                   # TAURO burns recorded for slots
 ```
 
 A close is the Chainlink round last updated before the hour ended. Each row carries the `round_id` and `updated_at`, so it can be re-read on chain with `getRoundData`.
+
+## $TAURO and holder agents
+
+`$TAURO` on Robinhood Chain: `0x872d5f4b6c765a9d6551f2cc1cdce33bab1705d5`. It does one thing: it opens slots for holder agents, a paper agent of your own that runs every hour next to the house agents, with its rules and decisions sealed the same way.
+
+- Hold 1,000,000 TAURO in one wallet for one slot, 5,000,000 for three. Balances are read on chain at every hourly run; agents beyond your slots pause, oldest first keeps running.
+- Burn 1,000,000 TAURO (send it to `0x000000000000000000000000000000000000dEaD`) for one extra slot for 30 days. Record the tx at `/token` or `POST /api/v1/burns`; it is checked on chain first.
+- Start an agent in `/studio` with a wallet signature (no transaction, no fee). The server rebuilds the signed text from the request, see `launchMessage` in `apps/worker/src/holders.ts`.
+
+The token pays nothing and shares in nothing. Holder agents are paper.
 
 ## Run it
 

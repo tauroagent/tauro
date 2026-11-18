@@ -242,7 +242,7 @@ function leaderboard(m: HomeModel): string {
   const rows = m.agents
     .slice(0, 5)
     .map(
-      (a, i) => `<tr><td class="rank">${i + 1}</td><td><a class="row-link" href="/agents/${esc(a.id)}">${esc(agentName(a))}</a><span class="pill red">by Tauro</span></td>
+      (a, i) => `<tr><td class="rank">${i + 1}</td><td><a class="row-link" href="/agents/${esc(a.id)}">${esc(agentName(a))}</a><span class="pill red">${a.owner === "house" ? "by Tauro" : "by a holder"}</span></td>
 <td class="hide-sm">${esc(TEMPLATE_LABEL[a.template] ?? a.template)}</td><td class="num ${tone(a.return_pct)}">${pct(a.return_pct)}</td><td class="num ${tone(a.vs_hold_pts)}">${pts(a.vs_hold_pts)}</td><td class="num hide-sm">${int(a.trades)}</td></tr>`,
     )
     .join("");

@@ -3,6 +3,7 @@ import { MARKETS } from "./universe.js";
 
 export interface AgentSummary {
   id: string;
+  owner: string;
   template: string;
   market: string;
   paper: boolean;
@@ -27,12 +28,13 @@ export interface AgentSummary {
 }
 
 export const TEMPLATE_LABEL: Record<string, string> = { momentum: "Momentum", mean_reversion: "Mean reversion", dip_hunter: "Dip hunter", breakout: "Breakout" };
+export const ownerLabel = (owner: string): string => (owner === "house" ? "House" : `Holder ${owner.slice(0, 6)}…${owner.slice(-4)}`);
 export const agentName = (a: { template: string; market: string }): string => `${TEMPLATE_LABEL[a.template] ?? a.template} · ${a.market}`;
 
 export async function agentSummaries(db: D1Database): Promise<AgentSummary[]> {
   const { results } = await db
     .prepare(
-      `SELECT a.id, a.template, a.market, a.paper, a.config_hash, a.created_hour, a.start_cash, a.start_price, a.rules,
+      `SELECT a.id, a.owner, a.template, a.market, a.paper, a.config_hash, a.created_hour, a.start_cash, a.start_price, a.rules,
               s.cash, s.qty, s.entry_price, s.pending, s.last_hour,
               (SELECT price FROM price_hourly p WHERE p.symbol = a.market AND p.hour = s.last_hour) AS price,
               (SELECT action FROM decisions d WHERE d.agent = a.id ORDER BY hour DESC LIMIT 1) AS last_action,
@@ -41,7 +43,7 @@ export async function agentSummaries(db: D1Database): Promise<AgentSummary[]> {
          FROM agents a JOIN agent_state s ON s.agent = a.id`,
     )
     .all<{
-      id: string; template: string; market: string; paper: number; config_hash: string; created_hour: number; start_cash: number;
+      id: string; owner: string; template: string; market: string; paper: number; config_hash: string; created_hour: number; start_cash: number;
       start_price: number | null; rules: string; cash: number; qty: number; entry_price: number | null; pending: string | null; last_hour: number;
       price: number | null; last_action: string | null; decisions: number; trades: number;
     }>();
@@ -54,7 +56,7 @@ export async function agentSummaries(db: D1Database): Promise<AgentSummary[]> {
       const exposure = Math.min(1, (rules.sizeUsd ?? r.start_cash) / r.start_cash);
       const hold = r.price === null || !r.start_price ? null : ((r.price - r.start_price) / r.start_price) * 100 * exposure;
       return {
-        id: r.id, template: r.template, market: r.market, paper: r.paper === 1, config_hash: r.config_hash, created_hour: r.created_hour,
+        id: r.id, owner: r.owner, template: r.template, market: r.market, paper: r.paper === 1, config_hash: r.config_hash, created_hour: r.created_hour,
         start_cash: r.start_cash, start_price: r.start_price, rules: JSON.parse(r.rules), cash: r.cash, qty: r.qty, entry_price: r.entry_price,
         pending: r.pending ? JSON.parse(r.pending) : null, last_hour: r.last_hour, price: r.price, equity, return_pct: ret,
         hold_return_pct: hold, vs_hold_pts: ret === null || hold === null ? null : ret - hold,

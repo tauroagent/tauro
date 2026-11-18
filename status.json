@@ -1,6 +1,6 @@
 {
   "$comment": "Single source of truth for public claims. README, site and docs render from this file; tools/claimcheck.mjs fails CI when they drift.",
-  "updated": "2026-11-15",
+  "updated": "2026-11-18",
   "claims": [
     {
       "id": "engine",
@@ -63,6 +63,18 @@
       "proof": "https://tauroagent.com/api/v1/agents"
     },
     {
+      "id": "holder_slots",
+      "text": "Holding 1,000,000 TAURO unlocks one slot for your own paper agent, 5,000,000 unlocks three. Balances are read on chain at every hourly run.",
+      "status": "in_testing",
+      "proof": "apps/worker/test/holders.test.ts, https://tauroagent.com/token"
+    },
+    {
+      "id": "burn_slots",
+      "text": "Burning 1,000,000 TAURO to the dead address adds one slot for 30 days. Each burn is checked on chain and listed publicly.",
+      "status": "in_testing",
+      "proof": "apps/worker/test/holders.test.ts, https://tauroagent.com/api/v1/burns"
+    },
+    {
       "id": "live_wallet",
       "text": "One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it.",
       "status": "planned",
@@ -79,6 +91,11 @@
       "text": "MCP server for agents.",
       "status": "planned",
       "proof": null
+    },
+    {
+      "id": "api_limits",
+      "text": "Holding TAURO raises read API limits.",
+      "status": "planned"
     }
   ]
 }

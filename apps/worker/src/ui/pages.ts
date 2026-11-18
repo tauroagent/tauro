@@ -1,4 +1,4 @@
-import { agentName, explain, TEMPLATE_LABEL, type AgentSummary, type DecisionRow, type MarketCard } from "../data.js";
+import { agentName, explain, ownerLabel, TEMPLATE_LABEL, type AgentSummary, type DecisionRow, type MarketCard } from "../data.js";
 import { MARKETS } from "../universe.js";
 import { layout } from "./layout.js";
 import { esc, int, lineChart, pct, price, pts, short, spark, tone, usd, utcStamp } from "./util.js";
@@ -10,7 +10,7 @@ function agentRows(agents: AgentSummary[]): string {
     .map(
       (a, i) => `<tr>
   <td class="rank">${i + 1}</td>
-  <td><a class="row-link" href="/agents/${esc(a.id)}">${esc(agentName(a))}</a><div class="dim" style="font-size:13px">House · paper</div></td>
+  <td><a class="row-link" href="/agents/${esc(a.id)}">${esc(agentName(a))}</a><div class="dim" style="font-size:13px">${esc(ownerLabel(a.owner))} · paper</div></td>
   <td class="hide-sm">${a.qty > 0 ? "Holding" : "Flat"}</td>
   <td class="num">${a.equity === null ? "n/a" : usd(a.equity)}</td>
   <td class="num ${tone(a.return_pct)}">${pct(a.return_pct)}</td>
@@ -27,7 +27,7 @@ export function renderAgents(agents: AgentSummary[]): string {
   const body = `<div class="page-head"><div class="wrap">
   <p class="eyebrow">Leaderboard</p>
   <h1>Agents</h1>
-  <p class="lead">Every agent, ranked by paper return since it started, next to holding the same dollar amount of its market from the start. ${since ? `House agents started ${esc(since)}.` : ""} All of them are paper.</p>
+  <p class="lead">Every agent, ranked by paper return since it started, next to holding the same dollar amount of its market from the start. ${since ? `House agents started ${esc(since)}.` : ""} Holder agents are run by TAURO holders, <a href="/token">one per slot</a>. All of them are paper.</p>
 </div></div>
 <section style="padding-top:40px"><div class="wrap">
   ${
@@ -71,7 +71,7 @@ export function renderAgent(a: AgentSummary, series: { hour: number; equity: num
   const body = `<div class="page-head"><div class="wrap">
   <p class="crumbs"><a href="/agents">Agents</a> / ${esc(a.id)}</p>
   <h1>${esc(agentName(a))}</h1>
-  <p style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0"><span class="tag">House agent</span><span class="tag paper">Paper</span><span class="tag">${esc(TEMPLATE_LABEL[a.template] ?? a.template)}</span><span class="tag">${a.qty > 0 ? "Holding " + esc(a.market) : "Flat"}</span></p>
+  <p style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0"><span class="tag">${a.owner === "house" ? "House agent" : `Holder agent · <a href="https://robin.etherscan.io/address/${esc(a.owner)}">${esc(ownerLabel(a.owner).replace("Holder ", ""))}</a>`}</span><span class="tag paper">Paper</span><span class="tag">${esc(TEMPLATE_LABEL[a.template] ?? a.template)}</span><span class="tag">${a.qty > 0 ? "Holding " + esc(a.market) : "Flat"}</span></p>
 </div></div>
 <section style="padding-top:32px"><div class="wrap grid-2">
   <div>
@@ -186,7 +186,7 @@ export function renderStudio(): string {
     .join("");
   const opts = MARKETS.map((m) => `<option value="${esc(m.symbol)}">${esc(m.symbol)} · ${esc(m.name)}</option>`).join("");
   const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Studio</p><h1>Shape an agent. <em>Replay it.</em></h1>
-<p class="lead">Pick a strategy and a stock token, adjust the stop loss and order size, and replay it on every hourly close we have. The replay runs in your browser with the same engine the house agents use. Saving and running your own agent is not open yet.</p></div></div>
+<p class="lead">Pick a strategy and a stock token, adjust the stop loss and order size, and replay it on every hourly close we have. The replay runs in your browser with the same engine the house agents use. Like it? TAURO holders can run it as their own paper agent, sealed every hour.</p></div></div>
 <section style="padding-top:40px"><div class="wrap tool">
   <form class="card panel" data-studio>
     <div class="field"><label id="tpl-l">Strategy</label><div class="chips" role="group" aria-labelledby="tpl-l">${tpl}</div><small data-tpl-desc></small></div>
@@ -206,8 +206,18 @@ export function renderStudio(): string {
     <p data-verdict style="margin:14px 0 0"></p>
     <dl class="facts" style="margin-top:16px"><dt>Fills</dt><dd data-fills>…</dd><dt>Worst drop</dt><dd data-dd>…</dd><dt>Ending value</dt><dd data-end>…</dd></dl>
   </div>
-</div></section>`;
-  return layout({ title: "Studio · Tauro", description: "Replay a trading strategy on hourly Chainlink closes for Robinhood Chain stock tokens, in your browser.", path: "/studio", scripts: ["/js/studio.js"] }, body);
+</div></section>
+<section style="padding-top:0"><div class="wrap"><div class="card panel holder" data-holder>
+  <h2 style="font-size:22px;margin:0 0 6px">Run it as your agent</h2>
+  <p class="dim" style="margin:0 0 14px">Your wallet signs a message with the settings above. No transaction, no fee. From the next hour your agent decides every hour next to the house agents, and its rules and decisions are sealed on Robinhood Chain. Needs a free slot: hold 1,000,000 TAURO for one, 5,000,000 for three, or burn TAURO for more. <a href="/token">How slots work</a></p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <button class="btn" type="button" data-connect>Connect wallet</button>
+    <button class="btn soft" type="button" data-launch hidden>Sign and start</button>
+    <span class="dim" style="font-size:14px" data-wallet aria-live="polite"></span>
+  </div>
+  <p data-holder-msg aria-live="polite" style="margin:12px 0 0"></p>
+</div></div></section>`;
+  return layout({ title: "Studio · Tauro", description: "Replay a trading strategy on hourly Chainlink closes for Robinhood Chain stock tokens, in your browser.", path: "/studio", scripts: ["/js/studio.js", "/js/holder.js"] }, body);
 }
 
 export function renderNotFound(): string {
@@ -215,4 +225,42 @@ export function renderNotFound(): string {
     { title: "Not found · Tauro", description: "This page does not exist.", path: "/404" },
     `<div class="page-head" style="border:0"><div class="wrap"><p class="eyebrow">Error 404</p><h1>No record <em>for this page.</em></h1><p class="lead">The link may be old, or it never existed. Everything that did exist is sealed.</p><p style="margin-top:24px"><a class="btn" href="/">Back to the home page</a></p></div></div>`,
   );
+}
+
+export interface TokenPage {
+  address: string;
+  hold: { min_tauro: number; slots: number }[];
+  burn: { per_slot_tauro: number; slot_days: number };
+  totalBurned: number;
+  burns: { tx_hash: string; owner: string; tauro: number; slots: number; block_time: string; expires_at: string }[];
+  holderAgents: number;
+}
+
+export function renderToken(t: TokenPage): string {
+  const fmt = (n: number) => n.toLocaleString("en-US");
+  const rows = t.burns.length
+    ? `<div class="scroll"><table class="table"><thead><tr><th scope="col">When (UTC)</th><th scope="col">Wallet</th><th scope="col" class="num">TAURO</th><th scope="col" class="num">Slots</th><th scope="col" class="hide-sm">Until</th><th scope="col">Tx</th></tr></thead><tbody>${t.burns
+        .map((b) => `<tr><td>${esc(b.block_time.slice(0, 16).replace("T", " "))}</td><td><code>${esc(short(b.owner))}</code></td><td class="num">${fmt(b.tauro)}</td><td class="num">${b.slots}</td><td class="hide-sm">${esc(b.expires_at.slice(0, 10))}</td><td><a href="https://robin.etherscan.io/tx/${esc(b.tx_hash)}">${esc(short(b.tx_hash))}</a></td></tr>`)
+        .join("")}</tbody></table></div>`
+    : `<p class="state">No burns recorded yet.</p>`;
+  const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">$TAURO</p><h1>Hold it, run an agent. <em>Burn it, run more.</em></h1>
+<p class="lead">TAURO is the key to holder agents: your own paper trading agent that decides every hour next to the house agents, with its rules and every decision sealed on Robinhood Chain. Nothing else. The token pays nothing and shares in nothing.</p></div></div>
+<section style="padding-top:40px"><div class="wrap">
+  <div class="cards3">
+    ${t.hold.map((h) => `<div class="card panel"><div class="dim" style="font-size:13px">Hold</div><div class="big-result">${fmt(h.min_tauro)}</div><p style="margin:6px 0 0">TAURO in one wallet: <b>${h.slots} agent slot${h.slots > 1 ? "s" : ""}</b></p></div>`).join("")}
+    <div class="card panel"><div class="dim" style="font-size:13px">Burn</div><div class="big-result">${fmt(t.burn.per_slot_tauro)}</div><p style="margin:6px 0 0">TAURO sent to 0x…dEaD: <b>+1 slot for ${t.burn.slot_days} days</b></p></div>
+  </div>
+  <ul class="how-list"><li><b>Checked.</b> Every hourly run reads each holder's balance on chain. Agents beyond your slots pause, oldest first keeps running, and resume when slots return.</li><li><b>Start one.</b> Shape it in <a href="/studio">Studio</a>, then sign. A signature, not a transaction: no gas, no fee.</li><li><b>Burn.</b> Send TAURO from your wallet to 0x000000000000000000000000000000000000dEaD, then paste the tx below. It is checked on chain before it counts. Burns before 18 November 2026 do not count.</li><li><b>Running now.</b> ${int(t.holderAgents)} holder agent${t.holderAgents === 1 ? "" : "s"}. <a href="/agents">Leaderboard</a></li><li><b>Contract.</b> <code>${esc(t.address)}</code></li></ul>
+</div></section>
+<section style="padding-top:0"><div class="wrap tool">
+  <form class="card panel" data-tier-form><h2 style="font-size:20px;margin:0 0 10px">Check a wallet</h2>
+    <div class="field"><label for="t-addr">Wallet address</label><input id="t-addr" name="address" placeholder="0x…" autocomplete="off" spellcheck="false"></div>
+    <button class="btn" type="submit">Check slots</button><div data-tier-out aria-live="polite" style="margin-top:12px"></div></form>
+  <form class="card panel" data-burn-form><h2 style="font-size:20px;margin:0 0 10px">Record a burn</h2>
+    <div class="field"><label for="t-tx">Burn transaction hash</label><input id="t-tx" name="tx" placeholder="0x…" autocomplete="off" spellcheck="false"></div>
+    <button class="btn" type="submit">Check and record</button><div data-burn-out aria-live="polite" style="margin-top:12px"></div></form>
+</div></section>
+<section style="padding-top:0"><div class="wrap"><h2 style="font-size:22px">Burns <span class="dim" style="font-size:16px">${fmt(t.totalBurned)} TAURO in total</span></h2>${rows}
+<p class="dim" style="font-size:13px;margin-top:12px">JSON: <a href="/api/v1/burns">/api/v1/burns</a> · <a href="/api/v1/tier?address=${esc(t.address)}">/api/v1/tier</a>. Holder agents are paper, like every agent here. Not investment advice.</p></div></section>`;
+  return layout({ title: "$TAURO slots · Tauro", description: "Hold TAURO to run your own paper trading agent on Robinhood Chain, sealed every hour. Burn TAURO for more slots.", path: "/token", scripts: ["/js/holder.js"] }, body);
 }

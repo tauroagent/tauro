@@ -86,7 +86,7 @@ describe("pages", () => {
     hoursOfPrices: 0, agents: [], decisions: [], markets: [], featuredSeries: [], showcase: [], seals: [], claims,
   };
   const agent = {
-    id: "house-dip-hunter-tsla", template: "dip_hunter", market: "TSLA", paper: true, config_hash: "0xabc", created_hour: H, start_cash: 1000, start_price: 380,
+    id: "house-dip-hunter-tsla", owner: "house", template: "dip_hunter", market: "TSLA", paper: true, config_hash: "0xabc", created_hour: H, start_cash: 1000, start_price: 380,
     rules: {}, cash: 900, qty: 0.25, entry_price: 400, pending: null, last_hour: H, price: 412, equity: 1003.2, return_pct: 0.32, hold_return_pct: -1.5,
     vs_hold_pts: 1.82, last_action: "hold", decisions: 3, trades: 1,
   };

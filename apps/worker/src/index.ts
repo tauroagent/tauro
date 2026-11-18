@@ -9,8 +9,9 @@ import { buildPending, sendPending } from "./seal-run.js";
 import { backtest, TEMPLATES } from "@tauro/engine";
 import { agentSummaries, closes, equitySeries, hoursOfPrices, marketCards, recentDecisions, recentSeals, showcase, siteStats } from "./data.js";
 import { renderHome, type HomeModel } from "./ui/home.js";
-import { renderAgent, renderAgents, renderMarket, renderMarkets, renderNotFound, renderStudio, renderVerify } from "./ui/pages.js";
+import { renderAgent, renderAgents, renderMarket, renderMarkets, renderNotFound, renderStudio, renderToken, renderVerify } from "./ui/pages.js";
 import { MARKETS, UNIVERSE_SOURCES } from "./universe.js";
+import { holdersRoute, slotRules } from "./holders-api.js";
 
 export interface Env {
   DB: D1Database;
@@ -37,8 +38,12 @@ const ROUTES = {
   "/api/v1/ingest?hours=48": "Every ingest run, including failed reads, newest first.",
   "/api/v1/seals?hours=48": "Hourly Merkle roots: built, sent, confirmed on SealRegistry, failed or missed.",
   "/api/v1/proof?hour=1794690000&subject=TSLA": "One leaf with its record, Merkle proof, root and seal status.",
-  "/api/v1/agents": "House paper agents: rules, config hash, paper book, equity vs buy-and-hold.",
+  "/api/v1/agents": "All paper agents, house and holder: rules, config hash, paper book, equity vs buy-and-hold.",
   "/api/v1/decisions?agent=house-momentum-tsla&hours=24": "Every hourly decision of one agent, with the numbers its rules looked at and any paper fill.",
+  "/api/v1/tier?address=0x…": "A wallet's TAURO balance, holder agent slots, burns and agents. Read from chain on each call.",
+  "POST /api/v1/agents/launch": "Start your own paper agent with a wallet signature. Needs a free slot (hold or burn TAURO).",
+  "POST /api/v1/agents/retire": "Stop one of your agents with a wallet signature. Its sealed history stays public.",
+  "/api/v1/burns": "Every TAURO burn recorded for slots. POST {tx} to record yours; it is checked on chain.",
   "/api/v1/status": "Every public claim and its status (status.json).",
   "/version": "Deployed git commit.",
 };
@@ -94,6 +99,12 @@ Source (MIT): https://github.com/tauroagent/tauro
 
 async function handle(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
+  if (req.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "content-type", "access-control-max-age": "86400" } });
+  if (["/api/v1/tier", "/api/v1/burns", "/api/v1/agents/launch", "/api/v1/agents/retire"].includes(url.pathname)) {
+    const r = await holdersRoute(url.pathname, req, url, env.DB, client(env.RPC_URL), json);
+    if (r) return r;
+  }
   if (req.method !== "GET" && req.method !== "HEAD") return json({ error: "method not allowed" }, { status: 405 });
 
   switch (url.pathname) {
@@ -107,6 +118,17 @@ async function handle(req: Request, env: Env): Promise<Response> {
       return html(renderVerify(), 200, 3600);
     case "/studio":
       return html(renderStudio(), 200, 3600);
+    case "/token": {
+      const { results } = await env.DB.prepare("SELECT tx_hash, owner, amount, block_time, slots, expires_at FROM burns ORDER BY block_time DESC LIMIT 100").all<{ tx_hash: string; owner: string; amount: string; block_time: number; slots: number; expires_at: number }>();
+      const running = await env.DB.prepare("SELECT COUNT(*) AS n FROM launches WHERE status = 'active'").first<{ n: number }>();
+      const r = slotRules();
+      const tk = (w: string) => Number(BigInt(w) / 10n ** 12n) / 1e6;
+      return html(renderToken({
+        address: TOKEN.address, hold: r.hold, burn: r.burn, holderAgents: running?.n ?? 0,
+        totalBurned: results.reduce((s, b) => s + tk(b.amount), 0),
+        burns: results.map((b) => ({ tx_hash: b.tx_hash, owner: b.owner, tauro: tk(b.amount), slots: b.slots, block_time: new Date(b.block_time * 1000).toISOString(), expires_at: new Date(b.expires_at * 1000).toISOString() })),
+      }), 200, 60);
+    }
     case "/llms.txt":
       return new Response(LLMS, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
     case "/api/v1":
@@ -245,7 +267,7 @@ export default {
       (async () => {
         const ingest = await runIngest(env.DB, c, Math.floor(Date.now() / 1000));
         const agents = [];
-        for (const h of ingest.hours) agents.push(await runAgents(env.DB, h, env.GIT_SHA ?? "dev"));
+        for (const h of ingest.hours) agents.push(await runAgents(env.DB, h, env.GIT_SHA ?? "dev", c));
         const built = await buildPending(env.DB);
         const sent = await sendPending(env, c);
         console.log("hourly", JSON.stringify({ ingest, agents, built, sent }));

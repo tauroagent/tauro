@@ -72,7 +72,7 @@ ${body}
       <a class="brand" href="/"><img src="/brand/mark-violet.svg" alt="" width="28" height="28">Tauro</a>
       <p style="max-width:40ch;margin:14px 0 0">Trading agents for tokenized stocks on Robinhood Chain. Rules you can read, decisions sealed on chain every hour.</p>
     </div>
-    <div><h4>Product</h4><ul><li><a href="/agents">Agents</a></li><li><a href="/markets">Markets</a></li><li><a href="/studio">Studio</a></li><li><a href="/verify">Verify an hour</a></li></ul></div>
+    <div><h4>Product</h4><ul><li><a href="/agents">Agents</a></li><li><a href="/markets">Markets</a></li><li><a href="/studio">Studio</a></li><li><a href="/verify">Verify an hour</a></li><li><a href="/token">$TAURO slots</a></li></ul></div>
     <div><h4>Open data</h4><ul><li><a href="/api/v1">Read API</a></li><li><a href="/api/v1/seals">Seals</a></li><li><a href="/api/v1/status">Claims</a></li><li><a href="/llms.txt">llms.txt</a></li></ul></div>
     <div><h4>Source</h4><ul><li><a class="soc" href="https://github.com/tauroagent/tauro">${GH_ICON}<span>GitHub</span></a></li><li><a href="https://repo.sourcify.dev/4663/0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14">SealRegistry source</a></li><li><a class="soc" href="https://x.com/Tauro_Agent">${X_ICON}<span>X (@Tauro_Agent)</span></a></li></ul></div>
     <p class="token-ca"><span>$${TOKEN.symbol} on ${TOKEN.chain}</span> <code>${TOKEN.address}</code></p>
