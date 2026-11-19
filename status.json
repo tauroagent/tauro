@@ -1,6 +1,6 @@
 {
   "$comment": "Single source of truth for public claims. README, site and docs render from this file; tools/claimcheck.mjs fails CI when they drift.",
-  "updated": "2026-11-19",
+  "updated": "2026-11-20",
   "claims": [
     {
       "id": "engine",
@@ -79,6 +79,12 @@
       "text": "Anyone can sign a call on a stock token. It is sealed in the next hourly root on Robinhood Chain and scored against the Chainlink close at its horizon.",
       "status": "live",
       "proof": "https://tauroagent.com/api/v1/proof?hour=1795100400&subject=call-7d16d5463a3b (first call, tx 0xd1b72fe7…b890, on time), apps/worker/test/calls.test.ts"
+    },
+    {
+      "id": "call_leaderboard",
+      "text": "A public leaderboard ranks every caller by hit rate after 3 resolved calls. Wrong calls stay on it, and each call and record has a share card.",
+      "status": "live",
+      "proof": "https://tauroagent.com/calls/leaderboard, https://tauroagent.com/api/v1/calls/leaderboard, apps/worker/test/calls.test.ts"
     },
     {
       "id": "bounty",

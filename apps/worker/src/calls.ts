@@ -90,6 +90,74 @@ export function outcome(c: Pick<CallRow, "side" | "hour" | "horizon">, entry: nu
   return { state: "resolved", entry, exit, move_pct: move, right: c.side === "up" ? move > 0 : move < 0, resolves_at };
 }
 
+/** Ranking needs this many resolved calls, so one lucky call does not top the board. */
+export const MIN_RANKED = 3;
+
+export interface ScoredCall { id: string; caller: string; market: string; side: Side; horizon: number; submitted_at: number; o: Outcome }
+
+export interface CallerStats {
+  caller: string; calls: number; resolved: number; right: number; wrong: number; open: number;
+  hit_rate: number | null; avg_edge_pct: number | null; ranked: boolean;
+  best: { id: string; market: string; side: Side; horizon_hours: number; edge_pct: number } | null;
+  last_call_at: string;
+}
+
+/** Move in the direction of the call: +2% on an up call that rose 2%, +2% on a down call that fell 2%. */
+export const edgeOf = (side: Side, move: number): number => (side === "up" ? move : -move);
+
+export function scoreCallers(items: ScoredCall[]): CallerStats[] {
+  const by = new Map<string, ScoredCall[]>();
+  for (const it of items) by.set(it.caller, [...(by.get(it.caller) ?? []), it]);
+  const out: CallerStats[] = [];
+  for (const [caller, cs] of by) {
+    const res = cs.filter((c) => c.o.state === "resolved" && c.o.move_pct !== null);
+    const right = res.filter((c) => c.o.right).length;
+    const edges = res.map((c) => ({ c, e: edgeOf(c.side, c.o.move_pct!) }));
+    const top = edges.reduce<(typeof edges)[number] | null>((b, x) => (!b || x.e > b.e ? x : b), null);
+    out.push({
+      caller, calls: cs.length, resolved: res.length, right, wrong: res.length - right,
+      open: cs.filter((c) => c.o.state === "open" || c.o.state === "waiting_for_seal").length,
+      hit_rate: res.length ? (right / res.length) * 100 : null,
+      avg_edge_pct: edges.length ? edges.reduce((s, x) => s + x.e, 0) / edges.length : null,
+      ranked: res.length >= MIN_RANKED,
+      best: top ? { id: top.c.id, market: top.c.market, side: top.c.side, horizon_hours: top.c.horizon, edge_pct: top.e } : null,
+      last_call_at: new Date(Math.max(...cs.map((c) => c.submitted_at)) * 1000).toISOString(),
+    });
+  }
+  const n = (v: number | null) => v ?? -Infinity;
+  return out.sort((a, b) => Number(b.ranked) - Number(a.ranked) || n(b.hit_rate) - n(a.hit_rate) || n(b.avg_edge_pct) - n(a.avg_edge_pct) || b.resolved - a.resolved || b.calls - a.calls);
+}
+
+export const boardRules = () => ({
+  ranking: `Hit rate (right calls out of resolved calls), then average move in the called direction. A wallet is ranked after ${MIN_RANKED} resolved calls.`,
+  right: "Up is right if the close at the horizon is higher than the entry close, down if lower.",
+  edge: "Average move in the called direction: +2% for an up call that rose 2% or a down call that fell 2%.",
+  min_resolved: MIN_RANKED,
+});
+
+/** Every call with its outcome, in one query (seal + entry and exit closes joined). */
+export async function scoredCalls(db: D1Database, nowSec: number, caller: string | null = null): Promise<ScoredCall[]> {
+  const sql = `SELECT c.id, c.caller, c.market, c.side, c.horizon, c.submitted_at, c.hour, s.status AS seal_status, e.price AS entry, x.price AS exit
+    FROM calls c LEFT JOIN seals s ON s.hour = c.hour
+    LEFT JOIN price_hourly e ON e.symbol = c.market AND e.hour = c.hour AND e.status IN ('ok', 'backfill')
+    LEFT JOIN price_hourly x ON x.symbol = c.market AND x.hour = c.hour + c.horizon * 3600 AND x.status IN ('ok', 'backfill')
+    ${caller ? "WHERE c.caller = ?" : ""} ORDER BY c.submitted_at DESC LIMIT 5000`;
+  const q = caller ? db.prepare(sql).bind(caller.toLowerCase()) : db.prepare(sql);
+  const rows = (await q.all<{ id: string; caller: string; market: string; side: Side; horizon: number; submitted_at: number; hour: number; seal_status: string | null; entry: number | null; exit: number | null }>()).results;
+  return rows.map((r) => ({ id: r.id, caller: r.caller, market: r.market, side: r.side, horizon: r.horizon, submitted_at: r.submitted_at, o: outcome(r, r.entry, r.exit, nowSec, r.seal_status === "confirmed") }));
+}
+
+export async function leaderboard(db: D1Database, nowSec: number) {
+  return { rules: boardRules(), callers: scoreCallers(await scoredCalls(db, nowSec)) };
+}
+
+export async function callerRecord(db: D1Database, caller: string, nowSec: number) {
+  const [stats] = scoreCallers(await scoredCalls(db, nowSec, caller));
+  const all = scoreCallers(await scoredCalls(db, nowSec)).filter((c) => c.ranked);
+  const rank = stats?.ranked ? all.findIndex((c) => c.caller === stats.caller) + 1 : null;
+  return { stats: stats ?? null, rank, ranked_wallets: all.length };
+}
+
 type Json = (body: unknown, init?: { status?: number; maxAge?: number }) => Response;
 const bad = (json: Json, error: string, status = 400, extra: Record<string, unknown> = {}) => json({ error, ...extra }, { status, maxAge: 0 });
 
@@ -143,6 +211,10 @@ export async function callsRoute(path: string, req: Request, url: URL, db: D1Dat
     if (!row) return bad(json, "no call with this id", 404);
     return json(await callView(db, row, now), { maxAge: 60 });
   }
+  if (path === "/api/v1/calls/leaderboard") {
+    if (req.method !== "GET" && req.method !== "HEAD") return bad(json, "method not allowed", 405);
+    return json(await leaderboard(db, now), { maxAge: 60 });
+  }
   if (path !== "/api/v1/calls") return null;
 
   if (req.method !== "POST") {
@@ -150,7 +222,8 @@ export async function callsRoute(path: string, req: Request, url: URL, db: D1Dat
     if (caller && !isAddress(caller)) return bad(json, "caller must be a wallet address");
     const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 50, 1), 200);
     const rows = await listCalls(db, caller, limit);
-    return json({ rules: callRules(), calls: await Promise.all(rows.map((r) => callView(db, r, now))) }, { maxAge: 30 });
+    const record = caller ? await callerRecord(db, caller, now) : undefined;
+    return json({ rules: callRules(), ...(record ? { record } : {}), calls: await Promise.all(rows.map((r) => callView(db, r, now))) }, { maxAge: 30 });
   }
 
   const b = (await req.json().catch(() => ({}))) as Partial<CallRequest> & { signature?: string };

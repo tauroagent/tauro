@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { verifyMessage } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { callIdFor, callMessage, callRecord, cleanNote, outcome, sealHourFor, validateCall } from "../src/calls.js";
+import { callIdFor, callMessage, callRecord, cleanNote, edgeOf, outcome, scoreCallers, sealHourFor, validateCall, type ScoredCall } from "../src/calls.js";
 
 const acct = privateKeyToAccount(generatePrivateKey());
 const NOW = 1_795_100_000;
@@ -54,5 +54,25 @@ describe("sealed calls", () => {
     expect(callIdFor(req.caller.toUpperCase(), issued, "0xab")).toBe(id);
     const rec = callRecord({ id, ...req, message: "m", signature: "0xab", submitted_at: NOW, hour: 1 });
     expect(JSON.parse(rec)).toMatchObject({ call: id, market: "NVDA", side: "up", horizon_hours: 24, signature: "0xab", paper: true });
+  });
+
+  it("ranks callers by hit rate after 3 resolved calls and keeps misses", () => {
+    const res = (caller: string, id: string, side: "up" | "down", move: number): ScoredCall => ({ id, caller, market: "NVDA", side, horizon: 1, submitted_at: NOW,
+      o: outcome({ side, hour: NOW - 7200, horizon: 1 }, 100, 100 * (1 + move / 100), NOW, true) });
+    const open: ScoredCall = { ...res("0xb", "b4", "up", 1), o: outcome({ side: "up", hour: NOW, horizon: 24 }, 100, null, NOW, true) };
+    const board = scoreCallers([
+      res("0xa", "a1", "up", 2), res("0xa", "a2", "down", 1), res("0xa", "a3", "down", -3),
+      res("0xb", "b1", "up", 1), res("0xb", "b2", "up", 1), res("0xb", "b3", "down", -1), open,
+      res("0xc", "c1", "up", 9),
+    ]);
+    expect(board.map((c) => c.caller)).toEqual(["0xb", "0xa", "0xc"]);
+    const [b, a, c] = board;
+    expect(b).toMatchObject({ ranked: true, right: 3, resolved: 3, open: 1, hit_rate: 100 });
+    expect(a).toMatchObject({ ranked: true, right: 2, wrong: 1, resolved: 3 });
+    expect(a!.hit_rate).toBeCloseTo(66.67, 1);
+    expect(a!.avg_edge_pct).toBeCloseTo((2 - 1 + 3) / 3, 6);
+    expect(a!.best).toMatchObject({ id: "a3", side: "down" });
+    expect(c).toMatchObject({ ranked: false, right: 1, hit_rate: 100 });
+    expect(edgeOf("down", -2)).toBe(2);
   });
 });

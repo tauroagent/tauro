@@ -1,5 +1,6 @@
 import { agentName, explain, ownerLabel, TEMPLATE_LABEL, type AgentSummary, type DecisionRow, type MarketCard } from "../data.js";
 import { MARKETS } from "../universe.js";
+import { MIN_RANKED } from "../calls.js";
 import { layout } from "./layout.js";
 import { esc, int, lineChart, pct, price, pts, short, spark, tone, usd, utcStamp } from "./util.js";
 
@@ -268,6 +269,25 @@ export function renderToken(t: TokenPage): string {
 // ---- Sealed calls
 type CallView = Awaited<ReturnType<typeof import("../calls.js").callView>>;
 type CallRulesT = ReturnType<typeof import("../calls.js").callRules>;
+type Board = Awaited<ReturnType<typeof import("../calls.js").leaderboard>>;
+type CallerStatsT = Board["callers"][number];
+const SITE = "https://tauroagent.com";
+const signed = (v: number | null, d = 2): string => (v === null ? "n/a" : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(d)}%`);
+const hit = (c: CallerStatsT): string => (c.hit_rate === null ? "n/a" : `${Math.round(c.hit_rate)}%`);
+const resultText = (c: CallView): string => {
+  const o = c.outcome;
+  if (o.state === "resolved") return `${o.right ? "right" : "wrong"}, ${o.move_pct! >= 0 ? "+" : "−"}${Math.abs(o.move_pct!).toFixed(2)}%`;
+  if (o.state === "open") return "open";
+  if (o.state === "waiting_for_seal") return "waiting for its seal";
+  return "no close for that hour";
+};
+const intent = (text: string, url: string): string => `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+
+function boardRows(cs: CallerStatsT[], startRank = 1): string {
+  return cs.map((c, i) => `<tr><td class="rank">${c.ranked ? startRank + i : "–"}</td><td><a class="row-link" href="/callers/${esc(c.caller)}"><code>${esc(short(c.caller))}</code></a></td>
+<td class="num">${hit(c)}</td><td class="num">${int(c.right)} / ${int(c.resolved)}</td><td class="num ${tone(c.avg_edge_pct)}">${signed(c.avg_edge_pct)}</td><td class="num hide-sm">${int(c.open)}</td><td class="hide-sm">${c.best ? `<a href="/calls/${esc(c.best.id)}">${esc(c.best.market)} ${c.best.side} ${c.best.horizon_hours} h, ${signed(c.best.edge_pct)}</a>` : `<span class="dim">none yet</span>`}</td></tr>`).join("");
+}
+const BOARD_HEAD = `<thead><tr><th scope="col">#</th><th scope="col">Caller</th><th scope="col" class="num">Hit rate</th><th scope="col" class="num">Right</th><th scope="col" class="num">Avg move</th><th scope="col" class="num hide-sm">Open</th><th scope="col" class="hide-sm">Best call</th></tr></thead>`;
 
 const callState = (c: CallView): string => {
   const o = c.outcome;
@@ -279,7 +299,7 @@ const callState = (c: CallView): string => {
 
 const callLine = (c: CallView): string => `${esc(c.market)} ${c.side === "up" ? "up" : "down"} within ${c.horizon_hours} h`;
 
-export function renderCalls(calls: CallView[], rules: CallRulesT): string {
+export function renderCalls(calls: CallView[], rules: CallRulesT, board?: Board): string {
   const opts = rules.markets.map((m) => `<option value="${esc(m)}"${m === "NVDA" ? " selected" : ""}>${esc(m)}</option>`).join("");
   const hz = rules.horizons_hours.map((h) => `<option value="${h}"${h === 24 ? " selected" : ""}>${h} hour${h > 1 ? "s" : ""}</option>`).join("");
   const rows = calls.length
@@ -300,6 +320,8 @@ export function renderCalls(calls: CallView[], rules: CallRulesT): string {
   <div class="card panel"><h2 style="font-size:20px;margin:0 0 10px">How it is scored</h2>
     <ul class="how-list" style="margin:0"><li><b>Sealed.</b> Your signed text is a leaf in the next hourly Merkle root on SealRegistry. Anyone can check it with the proof link.</li><li><b>Entry.</b> ${esc(rules.entry)}.</li><li><b>Result.</b> ${esc(rules.result)}</li><li><b>Limit.</b> ${esc(rules.limit)}. Paper only: no trade, no money, nothing to pay.</li></ul></div>
 </div></section>
+${board ? `<section style="padding-top:0"><div class="wrap"><h2 style="font-size:22px">Leaderboard <a class="btn ghost" style="margin-left:10px;font-size:14px" href="/calls/leaderboard">Full board</a></h2>${board.callers.length ? `<div class="scroll"><table class="table">${BOARD_HEAD}<tbody>${boardRows(board.callers.slice(0, 5))}</tbody></table></div>` : `<p class="state">No callers yet.</p>`}
+<p class="dim" style="font-size:13px;margin-top:8px">${esc(board.rules.ranking)}</p></div></section>` : ""}
 <section style="padding-top:0"><div class="wrap"><h2 style="font-size:22px">Latest calls</h2>${rows}
 <p class="dim" style="font-size:13px;margin-top:12px">JSON: <a href="/api/v1/calls">/api/v1/calls</a>. Calls are opinions of the wallets that signed them, not Tauro's. Not investment advice.</p></div></section>`;
   return layout({ title: "Sealed calls · Tauro", description: "Sign a call on a Robinhood Chain stock token. It is sealed in the next hourly root on chain: no edits, no backdating. Free.", path: "/calls", scripts: ["/js/calls.js"] }, body);
@@ -320,9 +342,44 @@ export function renderCall(c: CallView): string {
     <dt>Seal</dt><dd>${tx}</dd><dt>Root</dt><dd><code>${"root" in c.seal && c.seal.root ? esc(short(c.seal.root, 10, 6)) : "pending"}</code></dd></dl>
     <p style="margin:12px 0 0"><a class="btn ghost" href="${esc(c.proof)}">Proof JSON</a> <a class="btn ghost" href="/verify">Verify in your browser</a></p></div>
 </div></section>
+<section style="padding-top:0"><div class="wrap"><div class="card panel" data-card data-kind="call" data-line="${esc(`${c.market} ${c.side} within ${c.horizon_hours} h`)}" data-note="${esc(c.note)}" data-caller="${esc(short(c.caller))}" data-hour="${esc(c.sealed_hour_utc.slice(0, 10) + ", " + c.sealed_hour_utc.slice(11, 16) + " UTC")}" data-entry="${o.entry === null ? "n/a" : "$" + o.entry.toFixed(2)}" data-exit="${o.exit === null ? "" : "$" + o.exit.toFixed(2)}" data-result="${esc(resultText(c))}" data-tone="${o.state === "resolved" ? (o.right ? "up" : "down") : ""}" data-tx="${"tx_hash" in c.seal && c.seal.tx_hash ? esc(short(c.seal.tx_hash, 10, 6)) : "pending"}" data-path="${esc("tauroagent.com/calls/" + c.id)}" data-file="${esc(c.id)}">
+  <h2 style="font-size:20px;margin:0 0 6px">Share this call</h2><p class="dim" style="margin:0 0 12px;font-size:14px">A card with the call, its seal and its result. Right or wrong, it shows what happened.</p>
+  <canvas data-canvas width="1200" height="675" style="width:100%;max-width:600px;height:auto;border-radius:12px;display:block" role="img" aria-label="Share card for this call"></canvas>
+  <p class="ctas" style="margin:12px 0 0"><button class="btn" type="button" data-download>Download card</button> <a class="btn soft" href="${esc(intent(c.outcome.state === "resolved" ? `My call: ${c.market} ${c.side} within ${c.horizon_hours} h. Sealed on Robinhood Chain before the move, scored by Chainlink. Result: ${resultText(c)}.` : `My call: ${c.market} ${c.side} within ${c.horizon_hours} h. Sealed on Robinhood Chain, so I can't edit it if I'm wrong.`, `${SITE}/calls/${c.id}`))}" target="_blank" rel="noopener">Post on X</a></p></div></div></section>
 <section style="padding-top:0"><div class="wrap"><h2 style="font-size:20px">The signed text</h2><pre class="card panel" style="white-space:pre-wrap;font-size:13px">${esc(c.message)}</pre>
-<p class="dim" style="font-size:13px">Signature <code>${esc(short(c.signature, 10, 8))}</code>. A call is the opinion of the wallet that signed it, not Tauro's. Paper only. Not investment advice. <a href="/calls">All calls</a></p></div></section>`;
-  return layout({ title: `${c.market} ${c.side} within ${c.horizon_hours}h · sealed call · Tauro`, description: `${short(c.caller)} called ${c.market} ${c.side} within ${c.horizon_hours} hours, sealed on Robinhood Chain in the ${c.sealed_hour_utc.slice(11, 16)} UTC hour of ${c.sealed_hour_utc.slice(0, 10)}. No edits, no backdating.`, path: `/calls/${c.id}` }, body);
+<p class="dim" style="font-size:13px">Signature <code>${esc(short(c.signature, 10, 8))}</code>. A call is the opinion of the wallet that signed it, not Tauro's. Paper only. Not investment advice. <a href="/calls">All calls</a> · <a href="/callers/${esc(c.caller)}">This caller's record</a></p></div></section>`;
+  return layout({ title: `${c.market} ${c.side} within ${c.horizon_hours}h · sealed call · Tauro`, description: `${short(c.caller)} called ${c.market} ${c.side} within ${c.horizon_hours} hours, sealed on Robinhood Chain in the ${c.sealed_hour_utc.slice(11, 16)} UTC hour of ${c.sealed_hour_utc.slice(0, 10)}. No edits, no backdating.`, path: `/calls/${c.id}`, scripts: ["/js/callcard.js"] }, body);
+}
+
+export function renderLeaderboard(b: Board): string {
+  const ranked = b.callers.filter((c) => c.ranked), rest = b.callers.filter((c) => !c.ranked);
+  const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Sealed calls · leaderboard</p><h1>Who called it. <em>On the record.</em></h1>
+<p class="lead">Every call here was signed before the price moved and sealed on Robinhood Chain. Wrong calls stay on the board with the right ones. Nobody can delete a miss, us included.</p>
+<p class="ctas"><a class="btn" href="/calls">Make a call</a></p></div></div>
+<section style="padding-top:40px"><div class="wrap"><h2 style="font-size:22px">Ranked <span class="dim" style="font-size:16px">${int(ranked.length)} wallets with ${b.rules.min_resolved}+ resolved calls</span></h2>
+${ranked.length ? `<div class="scroll"><table class="table">${BOARD_HEAD}<tbody>${boardRows(ranked)}</tbody></table></div>` : `<p class="state">Nobody is ranked yet. A wallet needs ${b.rules.min_resolved} resolved calls.</p>`}
+${rest.length ? `<h2 style="font-size:20px;margin-top:32px">Not ranked yet <span class="dim" style="font-size:15px">fewer than ${b.rules.min_resolved} resolved calls</span></h2><div class="scroll"><table class="table">${BOARD_HEAD}<tbody>${boardRows(rest)}</tbody></table></div>` : ""}
+<ul class="how-list" style="margin-top:20px"><li><b>Ranking.</b> ${esc(b.rules.ranking)}</li><li><b>Right.</b> ${esc(b.rules.right)}</li><li><b>Avg move.</b> ${esc(b.rules.edge)}</li></ul>
+<p class="dim" style="font-size:13px">JSON: <a href="/api/v1/calls/leaderboard">/api/v1/calls/leaderboard</a>. Calls are the opinions of the wallets that signed them, not Tauro's. Paper only. Not investment advice.</p></div></section>`;
+  return layout({ title: "Call leaderboard · Tauro", description: "Who called it, sealed on Robinhood Chain. Hit rate and average move for every wallet that signed a call. Misses stay on the board.", path: "/calls/leaderboard" }, body);
+}
+
+export function renderCaller(addr: string, rec: { stats: CallerStatsT | null; rank: number | null; ranked_wallets: number }, calls: CallView[]): string {
+  const s = rec.stats;
+  const rankTxt = rec.rank ? `#${rec.rank} of ${rec.ranked_wallets}` : s ? `not ranked yet (${s.resolved} of ${MIN_RANKED} resolved)` : "no calls yet";
+  const rows = calls.map((c) => `<tr><td>${esc(c.submitted_at.slice(0, 16).replace("T", " "))}</td><td><a class="row-link" href="/calls/${esc(c.id)}">${callLine(c)}</a></td><td>${callState(c)}</td></tr>`).join("");
+  const shareText = s ? `My sealed call record on Tauro: ${s.right} right of ${s.resolved} resolved${s.hit_rate === null ? "" : ` (${Math.round(s.hit_rate)}%)`}. Every call signed before the move and sealed on Robinhood Chain, misses included.` : "";
+  const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Caller record</p><h1><code style="font-size:.6em">${esc(short(addr, 8, 6))}</code></h1>
+<p class="lead">Every call this wallet signed on Tauro, sealed on Robinhood Chain. Rank: ${esc(rankTxt)}.</p></div></div>
+<section style="padding-top:40px"><div class="wrap">${s ? `<div class="tool"><div class="card panel"><dl class="facts">
+  <dt>Hit rate</dt><dd>${hit(s)}</dd><dt>Right</dt><dd>${int(s.right)} of ${int(s.resolved)} resolved</dd><dt>Avg move</dt><dd class="${tone(s.avg_edge_pct)}">${signed(s.avg_edge_pct)}</dd><dt>Open</dt><dd>${int(s.open)}</dd>
+  <dt>Best call</dt><dd>${s.best ? `<a href="/calls/${esc(s.best.id)}">${esc(s.best.market)} ${s.best.side} ${s.best.horizon_hours} h, ${signed(s.best.edge_pct)}</a>` : "none resolved yet"}</dd></dl></div>
+  <div class="card panel" data-card data-kind="record" data-caller="${esc(short(addr))}" data-hit="${hit(s)}" data-right="${s.right}" data-resolved="${s.resolved}" data-edge="${signed(s.avg_edge_pct)}" data-tone="${tone(s.avg_edge_pct)}" data-open="${s.open}" data-rank="${esc(rankTxt)}" data-path="${esc("tauroagent.com/callers/" + short(addr))}" data-file="tauro-record-${esc(addr.slice(2, 8))}">
+  <h2 style="font-size:20px;margin:0 0 10px">Share this record</h2><canvas data-canvas width="1200" height="675" style="width:100%;height:auto;border-radius:12px;display:block" role="img" aria-label="Share card for this record"></canvas>
+  <p class="ctas" style="margin:12px 0 0"><button class="btn" type="button" data-download>Download card</button> <a class="btn soft" href="${esc(intent(shareText, `${SITE}/callers/${addr}`))}" target="_blank" rel="noopener">Post on X</a></p></div></div>
+<h2 style="font-size:22px;margin-top:32px">Calls</h2><div class="scroll"><table class="table"><thead><tr><th scope="col">Signed (UTC)</th><th scope="col">Call</th><th scope="col">Result</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="state">This wallet has not signed a call yet. <a href="/calls">Make a call</a>.</p>`}
+<p class="dim" style="font-size:13px;margin-top:12px">JSON: <a href="/api/v1/calls?caller=${esc(addr)}">/api/v1/calls?caller=${esc(short(addr))}</a> · <a href="/calls/leaderboard">Leaderboard</a>. Paper only. Not investment advice.</p></div></section>`;
+  return layout({ title: `${short(addr)} · call record · Tauro`, description: s ? `${short(addr)}: ${s.right} right of ${s.resolved} resolved sealed calls on Robinhood Chain. Misses included.` : "A caller record on Tauro.", path: `/callers/${addr}`, scripts: s ? ["/js/callcard.js"] : [] }, body);
 }
 
 // ---- Seal bounty
