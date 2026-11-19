@@ -28,12 +28,12 @@ async function draw(el: HTMLElement, cv: HTMLCanvasElement) {
     ctx.font = `700 ${fit(ctx, line, W - 140, 76, 700)}px ${SF}`; ctx.fillStyle = "#f7f7f8"; ctx.fillText(line, 70, 182);
     if (d.note) { ctx.font = `400 28px ${SF}`; ctx.fillStyle = "#c9b8ea"; ctx.fillText(`“${d.note.slice(0, 70)}”`, 70, 236); }
     const res = d.result ?? "";
-    ctx.font = `700 ${fit(ctx, res, 520, 54, 700)}px ${SF}`; ctx.fillStyle = TONE[d.tone ?? ""] ?? "#f7f7f8"; ctx.fillText(res, 70, 330);
-    rows(ctx, [["Caller", d.caller ?? ""], ["Sealed in", d.hour ?? ""], ["Entry close", d.entry ?? ""], ...(d.exit ? [["Close at end", d.exit] as [string, string]] : []), ["Seal tx", d.tx ?? ""]], 70, 410);
+    ctx.font = `700 ${fit(ctx, res, 520, 54, 700)}px ${SF}`; ctx.fillStyle = TONE[d.tone ?? ""] ?? "#f7f7f8"; ctx.fillText(res, 70, 300);
+    rows(ctx, [["Caller", d.caller ?? ""], ["Sealed in", d.hour ?? ""], ["Entry close", d.entry ?? ""], ...(d.exit ? [["Close at end", d.exit] as [string, string]] : []), ["Seal tx", d.tx ?? ""]], 70, 372);
   } else {
     ctx.font = `700 120px ${SF}`; ctx.fillStyle = "#f7f7f8"; ctx.fillText(d.hit ?? "", 70, 250);
     ctx.font = `600 34px ${SF}`; ctx.fillStyle = "#c9b8ea"; ctx.fillText(`right, ${d.right} of ${d.resolved} resolved calls`, 70, 306);
-    rows(ctx, [["Caller", d.caller ?? ""], ["Avg move", d.edge ?? "", d.tone], ["Open calls", d.open ?? "0"], ["Rank", d.rank ?? ""]], 70, 410);
+    rows(ctx, [["Caller", d.caller ?? ""], ["Avg move", d.edge ?? "", d.tone], ["Open calls", d.open ?? "0"], ["Rank", d.rank ?? ""]], 70, 372);
   }
   ctx.font = `500 22px ${SF}`; ctx.fillStyle = "#8b8988";
   ctx.fillText("Signed before the move. Sealed, no edits. Paper only, not investment advice.", 70, H - 50);
