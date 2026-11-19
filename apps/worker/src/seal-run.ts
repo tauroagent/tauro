@@ -5,6 +5,7 @@ import { robinhood } from "./chain.js";
 import { canonicalize, LeafKind } from "@tauro/seal";
 import { buildHour, decideSeal, sealTiming, type PriceRow } from "./sealing.js";
 import { MARKETS } from "./universe.js";
+import { callRecord, type CallRow } from "./calls.js";
 
 export const REGISTRY_ABI = [
   { type: "function", name: "lastHour", stateMutability: "view", inputs: [], outputs: [{ type: "uint64" }] },
@@ -50,6 +51,7 @@ export async function buildPending(db: D1Database): Promise<number[]> {
         id: string; owner: string; template: string; market: string; rules: string; config_hash: string; paper: number; start_cash: number;
       }>()
     ).results;
+    const calls = (await db.prepare("SELECT * FROM calls WHERE hour = ? ORDER BY id").bind(hour).all<CallRow>()).results;
     const extra = [
       ...decisions.map((d) => ({ kind: LeafKind.Decision, subject: d.agent, record: d.record })),
       ...created.map((a) => ({
@@ -57,6 +59,7 @@ export async function buildPending(db: D1Database): Promise<number[]> {
         subject: a.id,
         record: canonicalize({ agent: a.id, owner: a.owner, template: a.template, market: a.market, rules: JSON.parse(a.rules), config_hash: a.config_hash, paper: a.paper === 1, start_cash: a.start_cash }),
       })),
+      ...calls.map((c) => ({ kind: LeafKind.Call, subject: c.id, record: callRecord(c) })),
     ];
     const { leaves, root } = buildHour(hour, rows, FEEDS, status, extra);
     const t = now();

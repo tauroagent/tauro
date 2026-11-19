@@ -9,7 +9,7 @@
     "deploy": "npm run build:client && wrangler deploy --var GIT_SHA:$(git rev-parse HEAD)",
     "db:migrate:local": "wrangler d1 migrations apply tauro --local",
     "db:migrate:remote": "wrangler d1 migrations apply tauro --remote",
-    "build:client": "esbuild src/client/verify.ts src/client/studio.ts src/client/holder.ts --bundle --format=esm --minify --target=es2022 --outdir=public/js"
+    "build:client": "esbuild src/client/verify.ts src/client/studio.ts src/client/holder.ts src/client/calls.ts --bundle --format=esm --minify --target=es2022 --outdir=public/js"
   },
   "dependencies": {
     "@tauro/engine": "*",

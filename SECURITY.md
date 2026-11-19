@@ -10,4 +10,4 @@ Report vulnerabilities privately through GitHub's **Report a vulnerability** but
 ## What we do not have
 
 - No third-party audit. Assurance today comes from the tests in this repository, including fuzz tests on the contract.
-- No bug bounty yet.
+- A seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour. Rules and scope: https://tauroagent.com/bounty (open until 31 December 2026).

@@ -25,6 +25,8 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | 20 house paper agents decide every hour. | Live |
 | Holding 1,000,000 TAURO unlocks one slot for your own paper agent, 5,000,000 unlocks three. Balances are read on chain at every hourly run. | Live |
 | Burning 1,000,000 TAURO to the dead address adds one slot for 30 days. Each burn is checked on chain and listed publicly. | Live |
+| Anyone can sign a call on a stock token. It is sealed in the next hourly root on Robinhood Chain and scored against the Chainlink close at its horizon. | In testing |
+| Seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour, open until 31 December 2026. | Live |
 | One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it. | Planned |
 | Verify CLI: recompute any sealed hour from public data. | Planned |
 | MCP server for agents. | Planned |

@@ -264,3 +264,82 @@ export function renderToken(t: TokenPage): string {
 <p class="dim" style="font-size:13px;margin-top:12px">JSON: <a href="/api/v1/burns">/api/v1/burns</a> · <a href="/api/v1/tier?address=${esc(t.address)}">/api/v1/tier</a>. Holder agents are paper, like every agent here. Not investment advice.</p></div></section>`;
   return layout({ title: "$TAURO slots · Tauro", description: "Hold TAURO to run your own paper trading agent on Robinhood Chain, sealed every hour. Burn TAURO for more slots.", path: "/token", scripts: ["/js/holder.js"] }, body);
 }
+
+// ---- Sealed calls
+type CallView = Awaited<ReturnType<typeof import("../calls.js").callView>>;
+type CallRulesT = ReturnType<typeof import("../calls.js").callRules>;
+
+const callState = (c: CallView): string => {
+  const o = c.outcome;
+  if (o.state === "waiting_for_seal") return `<span class="dim">waiting for its hourly seal</span>`;
+  if (o.state === "no_price") return `<span class="dim">no close for that hour</span>`;
+  if (o.state === "open") return `open until ${esc(o.resolves_at.slice(0, 16).replace("T", " "))} UTC`;
+  return `<span class="${o.right ? "up" : "down"}">${o.right ? "right" : "wrong"}, ${o.move_pct! >= 0 ? "+" : ""}${o.move_pct!.toFixed(2)}%</span>`;
+};
+
+const callLine = (c: CallView): string => `${esc(c.market)} ${c.side === "up" ? "up" : "down"} within ${c.horizon_hours} h`;
+
+export function renderCalls(calls: CallView[], rules: CallRulesT): string {
+  const opts = rules.markets.map((m) => `<option value="${esc(m)}"${m === "NVDA" ? " selected" : ""}>${esc(m)}</option>`).join("");
+  const hz = rules.horizons_hours.map((h) => `<option value="${h}"${h === 24 ? " selected" : ""}>${h} hour${h > 1 ? "s" : ""}</option>`).join("");
+  const rows = calls.length
+    ? `<div class="scroll"><table class="table"><thead><tr><th scope="col">Signed (UTC)</th><th scope="col">Caller</th><th scope="col">Call</th><th scope="col" class="hide-sm">Sealed hour</th><th scope="col">Result</th></tr></thead><tbody>${calls
+        .map((c) => `<tr><td>${esc(c.submitted_at.slice(0, 16).replace("T", " "))}</td><td><code>${esc(short(c.caller))}</code></td><td><a class="row-link" href="/calls/${esc(c.id)}">${callLine(c)}</a>${c.note ? `<div class="dim" style="font-size:13px">${esc(c.note)}</div>` : ""}</td><td class="hide-sm">${esc(c.sealed_hour_utc.slice(0, 16).replace("T", " "))} · ${esc(c.seal.status)}</td><td>${callState(c)}</td></tr>`)
+        .join("")}</tbody></table></div>`
+    : `<p class="state">No calls yet. Be the first on the record.</p>`;
+  const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Sealed calls</p><h1>Make a call. <em>Seal it on chain.</em></h1>
+<p class="lead">Sign a call on any Robinhood Chain stock token. It goes into the next hourly root on Robinhood Chain, so it cannot be edited, deleted or backdated. The entry is that hour's Chainlink close, and the result is read when your horizon ends. Free, a signature, not a transaction.</p></div></div>
+<section style="padding-top:40px"><div class="wrap tool" data-call>
+  <div class="card panel"><h2 style="font-size:20px;margin:0 0 10px">Your call</h2>
+    <div class="field"><label for="c-market">Stock token</label><select id="c-market">${opts}</select></div>
+    <div class="field"><label id="c-side-l">Call</label><div class="chips" role="group" aria-labelledby="c-side-l"><button type="button" class="chip" data-side="up" aria-pressed="true">Up</button><button type="button" class="chip" data-side="down" aria-pressed="false">Down</button></div></div>
+    <div class="field"><label for="c-horizon">Within</label><select id="c-horizon">${hz}</select></div>
+    <div class="field"><label for="c-note">Note <span class="dim">(optional, one line, ${rules.note_max} characters)</span></label><input id="c-note" maxlength="${rules.note_max}" autocomplete="off" placeholder="Why, in one line"></div>
+    <div class="ctas"><button class="btn" type="button" data-connect>Connect wallet</button><button class="btn soft" type="button" data-sign hidden>Sign and seal</button></div>
+    <p data-wallet class="dim" style="font-size:13px;margin:10px 0 0"></p><div data-call-msg aria-live="polite" style="margin-top:10px"></div></div>
+  <div class="card panel"><h2 style="font-size:20px;margin:0 0 10px">How it is scored</h2>
+    <ul class="how-list" style="margin:0"><li><b>Sealed.</b> Your signed text is a leaf in the next hourly Merkle root on SealRegistry. Anyone can check it with the proof link.</li><li><b>Entry.</b> ${esc(rules.entry)}.</li><li><b>Result.</b> ${esc(rules.result)}</li><li><b>Limit.</b> ${esc(rules.limit)}. Paper only: no trade, no money, nothing to pay.</li></ul></div>
+</div></section>
+<section style="padding-top:0"><div class="wrap"><h2 style="font-size:22px">Latest calls</h2>${rows}
+<p class="dim" style="font-size:13px;margin-top:12px">JSON: <a href="/api/v1/calls">/api/v1/calls</a>. Calls are opinions of the wallets that signed them, not Tauro's. Not investment advice.</p></div></section>`;
+  return layout({ title: "Sealed calls · Tauro", description: "Sign a call on a Robinhood Chain stock token. It is sealed in the next hourly root on chain: no edits, no backdating. Free.", path: "/calls", scripts: ["/js/calls.js"] }, body);
+}
+
+export function renderCall(c: CallView): string {
+  const tx = c.seal.status === "confirmed" && "tx_hash" in c.seal && c.seal.tx_hash ? `<a href="${EXPLORER}/tx/${esc(c.seal.tx_hash)}">${esc(short(c.seal.tx_hash))}</a>` : esc(c.seal.status);
+  const o = c.outcome;
+  const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Sealed call · <code>${esc(c.id)}</code></p><h1>${callLine(c)}</h1>
+<p class="lead">Signed by <code>${esc(short(c.caller))}</code> at ${esc(c.submitted_at.slice(0, 16).replace("T", " "))} UTC, sealed in the ${esc(c.sealed_hour_utc.slice(11, 16))} UTC hour of ${esc(c.sealed_hour_utc.slice(0, 10))}.${c.note ? ` “${esc(c.note)}”` : ""}</p></div></div>
+<section style="padding-top:40px"><div class="wrap tool">
+  <div class="card panel"><h2 style="font-size:20px;margin:0 0 10px">Result</h2><dl class="facts">
+    <dt>State</dt><dd>${callState(c)}</dd>
+    <dt>Entry close</dt><dd>${o.entry === null ? "n/a" : "$" + o.entry.toFixed(2)}</dd>
+    <dt>Close at the end</dt><dd>${o.exit === null ? "n/a" : "$" + o.exit.toFixed(2)}</dd>
+    <dt>Resolves</dt><dd>${esc(o.resolves_at.slice(0, 16).replace("T", " "))} UTC</dd></dl></div>
+  <div class="card panel"><h2 style="font-size:20px;margin:0 0 10px">On chain</h2><dl class="facts">
+    <dt>Seal</dt><dd>${tx}</dd><dt>Root</dt><dd><code>${"root" in c.seal && c.seal.root ? esc(short(c.seal.root, 10, 6)) : "pending"}</code></dd></dl>
+    <p style="margin:12px 0 0"><a class="btn ghost" href="${esc(c.proof)}">Proof JSON</a> <a class="btn ghost" href="/verify">Verify in your browser</a></p></div>
+</div></section>
+<section style="padding-top:0"><div class="wrap"><h2 style="font-size:20px">The signed text</h2><pre class="card panel" style="white-space:pre-wrap;font-size:13px">${esc(c.message)}</pre>
+<p class="dim" style="font-size:13px">Signature <code>${esc(short(c.signature, 10, 8))}</code>. A call is the opinion of the wallet that signed it, not Tauro's. Paper only. Not investment advice. <a href="/calls">All calls</a></p></div></section>`;
+  return layout({ title: `${c.market} ${c.side} within ${c.horizon_hours}h · sealed call · Tauro`, description: `${short(c.caller)} called ${c.market} ${c.side} within ${c.horizon_hours} hours, sealed on Robinhood Chain in the ${c.sealed_hour_utc.slice(11, 16)} UTC hour of ${c.sealed_hour_utc.slice(0, 10)}. No edits, no backdating.`, path: `/calls/${c.id}` }, body);
+}
+
+// ---- Seal bounty
+export function renderBounty(): string {
+  const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Bounty</p><h1>Fake one sealed decision. <em>Win 5,000,000 TAURO.</em></h1>
+<p class="lead">Every hour Tauro seals its decisions, prices and calls into one Merkle root on SealRegistry on Robinhood Chain. If the seal works, nobody can change a sealed record after the fact, us included. Prove it does not, and the reward is yours.</p></div></div>
+<section style="padding-top:40px"><div class="wrap tool">
+  <div class="card panel"><h2 style="font-size:20px;margin:0 0 10px">What counts</h2><ul class="how-list" style="margin:0">
+    <li><b>A forged record.</b> For any hour confirmed on chain, a record different from the published one, with a proof that verifies against <code>SealRegistry.sealOf(hour).root</code> under the leaf rule in <a href="/verify">Verify</a>.</li>
+    <li><b>A rewritten hour.</b> A transaction that makes SealRegistry store a different root for an hour it has already sealed, or accept a seal from any address other than the signer fixed at deploy.</li>
+    <li><b>A lying proof.</b> A request that makes <code>/api/v1/proof</code> report <code>root_matches_seal: true</code> for a record that is not the one sealed in that hour.</li></ul></div>
+  <div class="card panel"><h2 style="font-size:20px;margin:0 0 10px">The terms</h2><ul class="how-list" style="margin:0">
+    <li><b>Reward.</b> 5,000,000 TAURO for the first valid report, paid by the Tauro team to the wallet you name, within 7 days of confirming it.</li>
+    <li><b>Report.</b> Privately, through GitHub's Report a vulnerability button on <a href="https://github.com/tauroagent/tauro/security">tauroagent/tauro</a>, with steps we can reproduce. We publish the report and the fix after it is fixed.</li>
+    <li><b>Not in scope.</b> Missed hours (they are public by design), hours not yet confirmed, denial of service, phishing or stolen keys, and bugs in Robinhood Chain, Chainlink or wallets.</li>
+    <li><b>Open until</b> 31 December 2026, 23:59 UTC. One reward in total.</li></ul></div>
+</div></section>
+<section style="padding-top:0"><div class="wrap"><p class="dim" style="font-size:13px">Source: <a href="https://github.com/tauroagent/tauro">github.com/tauroagent/tauro</a> (contracts/, packages/seal). SealRegistry has no owner, no upgrade path and no pause. No third-party audit. The reward is in TAURO, which pays nothing and shares in nothing.</p></div></section>`;
+  return layout({ title: "Seal bounty · Tauro", description: "Fake one sealed decision on Tauro's SealRegistry on Robinhood Chain and win 5,000,000 TAURO. Rules and scope.", path: "/bounty" }, body);
+}

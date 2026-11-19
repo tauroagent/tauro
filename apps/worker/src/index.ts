@@ -6,10 +6,11 @@ import type { Hex } from "viem";
 import { HOUSE_MARKETS, runAgents } from "./agents.js";
 import { runIngest } from "./ingest.js";
 import { buildPending, sendPending } from "./seal-run.js";
+import { callsRoute, callView, getCall, listCalls, callRules } from "./calls.js";
 import { backtest, TEMPLATES } from "@tauro/engine";
 import { agentSummaries, closes, equitySeries, hoursOfPrices, marketCards, recentDecisions, recentSeals, showcase, siteStats } from "./data.js";
 import { renderHome, type HomeModel } from "./ui/home.js";
-import { renderAgent, renderAgents, renderMarket, renderMarkets, renderNotFound, renderStudio, renderToken, renderVerify } from "./ui/pages.js";
+import { renderAgent, renderAgents, renderBounty, renderCall, renderCalls, renderMarket, renderMarkets, renderNotFound, renderStudio, renderToken, renderVerify } from "./ui/pages.js";
 import { MARKETS, UNIVERSE_SOURCES } from "./universe.js";
 import { holdersRoute, slotRules } from "./holders-api.js";
 
@@ -43,6 +44,8 @@ const ROUTES = {
   "/api/v1/tier?address=0x…": "A wallet's TAURO balance, holder agent slots, burns and agents. Read from chain on each call.",
   "POST /api/v1/agents/launch": "Start your own paper agent with a wallet signature. Needs a free slot (hold or burn TAURO).",
   "POST /api/v1/agents/retire": "Stop one of your agents with a wallet signature. Its sealed history stays public.",
+  "/api/v1/calls": "Sealed calls, newest first. POST a signed call (caller, market, side up|down, horizon 1|4|24|72|168 hours, note, issued, signature) to seal it in the next hourly root. ?caller=0x… for one wallet.",
+  "/api/v1/calls/call-…": "One sealed call: the signed text, its seal, proof link, entry close and result.",
   "/api/v1/burns": "Every TAURO burn recorded for slots. POST {tx} to record yours; it is checked on chain.",
   "/api/v1/status": "Every public claim and its status (status.json).",
   "/version": "Deployed git commit.",
@@ -102,6 +105,10 @@ async function handle(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
   if (req.method === "OPTIONS")
     return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "content-type", "access-control-max-age": "86400" } });
+  if (url.pathname === "/api/v1/calls" || url.pathname.startsWith("/api/v1/calls/")) {
+    const r = await callsRoute(url.pathname, req, url, env.DB, client(env.RPC_URL), json);
+    if (r) return r;
+  }
   if (["/api/v1/tier", "/api/v1/burns", "/api/v1/agents/launch", "/api/v1/agents/retire"].includes(url.pathname)) {
     const r = await holdersRoute(url.pathname, req, url, env.DB, client(env.RPC_URL), json);
     if (r) return r;
@@ -129,6 +136,13 @@ async function handle(req: Request, env: Env): Promise<Response> {
         totalBurned: results.reduce((s, b) => s + tk(b.amount), 0),
         burns: results.map((b) => ({ tx_hash: b.tx_hash, owner: b.owner, tauro: tk(b.amount), slots: b.slots, block_time: new Date(b.block_time * 1000).toISOString(), expires_at: new Date(b.expires_at * 1000).toISOString() })),
       }), 200, 60);
+    }
+    case "/bounty":
+      return html(renderBounty());
+    case "/calls": {
+      const now = Math.floor(Date.now() / 1000);
+      const rows = await listCalls(env.DB, null, 100);
+      return html(renderCalls(await Promise.all(rows.map((r) => callView(env.DB, r, now))), callRules()));
     }
     case "/llms.txt":
       return new Response(LLMS, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" } });
@@ -240,6 +254,12 @@ async function handle(req: Request, env: Env): Promise<Response> {
         if (!a) return html(renderNotFound(), 404);
         const [series, decisions] = await Promise.all([equitySeries(env.DB, a.id, a.market, a.start_cash), recentDecisions(env.DB, 48, a.id)]);
         return html(renderAgent(a, series, decisions));
+      }
+      const cl = url.pathname.match(/^\/calls\/(call-[0-9a-f]{12})$/);
+      if (cl) {
+        const row = await getCall(env.DB, cl[1]!);
+        if (!row) return html(renderNotFound(), 404);
+        return html(renderCall(await callView(env.DB, row, Math.floor(Date.now() / 1000))));
       }
       const mk = url.pathname.match(/^\/markets\/([A-Za-z.]{1,10})$/);
       if (mk) {

@@ -1,6 +1,6 @@
 {
   "$comment": "Single source of truth for public claims. README, site and docs render from this file; tools/claimcheck.mjs fails CI when they drift.",
-  "updated": "2026-11-18",
+  "updated": "2026-11-19",
   "claims": [
     {
       "id": "engine",
@@ -73,6 +73,18 @@
       "text": "Burning 1,000,000 TAURO to the dead address adds one slot for 30 days. Each burn is checked on chain and listed publicly.",
       "status": "live",
       "proof": "https://tauroagent.com/api/v1/burns, apps/worker/test/holders.test.ts"
+    },
+    {
+      "id": "calls",
+      "text": "Anyone can sign a call on a stock token. It is sealed in the next hourly root on Robinhood Chain and scored against the Chainlink close at its horizon.",
+      "status": "in_testing",
+      "proof": "apps/worker/test/calls.test.ts, https://tauroagent.com/calls"
+    },
+    {
+      "id": "bounty",
+      "text": "Seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour, open until 31 December 2026.",
+      "status": "live",
+      "proof": "https://tauroagent.com/bounty, SECURITY.md"
     },
     {
       "id": "live_wallet",

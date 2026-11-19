@@ -9,6 +9,7 @@ export const LeafKind = {
   Prereg: 4,
   Fill: 5,
   Price: 6,
+  Call: 7,
 } as const;
 export type LeafKind = (typeof LeafKind)[keyof typeof LeafKind];
 

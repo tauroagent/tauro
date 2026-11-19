@@ -265,6 +265,8 @@ const ROAD: [string, string, string][] = [
   ["missed", "Missed hours stay missed", "Shown with their reason, never back-filled."],
   ["holder_slots", "Holder agents", "Hold 1,000,000 TAURO for one paper agent, 5,000,000 for three. Rules sealed in the agent's first hour."],
   ["burn_slots", "Burn for a slot", "Burn 1,000,000 TAURO for one more slot for 30 days, checked on chain."],
+  ["calls", "Sealed calls", "Anyone signs a call on a stock token. It is sealed in the next hourly root and scored at its horizon. Free."],
+  ["bounty", "Seal bounty", "5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour."],
   ["verify_cli", "Verify CLI", "Recompute any sealed hour from public data."],
   ["mcp", "MCP server", "Tauro data and proofs, for agents."],
   ["live_wallet", "One public real-money wallet", "Every real fill links its transaction and the decision sealed before it, and passes the Chainlink price gate. Caps published before it starts."],
