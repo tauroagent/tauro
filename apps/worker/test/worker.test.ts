@@ -82,7 +82,7 @@ describe("pages", () => {
   const claims = [{ id: "a", text: "x <b>", status: "planned" }];
   const empty: HomeModel = {
     now: H,
-    stats: { markets: 35, agents: 0, decisions: 0, sealedOnTime: 0, sealsSinceFirst: 0, missedSinceFirst: 0, firstSealHour: null, lastSeal: null, lastIngest: null },
+    stats: { markets: 35, agents: 0, decisions: 0, sealedOnTime: 0, sealsSinceFirst: 0, missedSinceFirst: 0, sealsTotal: 0, missedTotal: 0, firstSealHour: null, lastSeal: null, lastIngest: null },
     hoursOfPrices: 0, agents: [], decisions: [], markets: [], featuredSeries: [], showcase: [], seals: [], claims,
   };
   const agent = {
@@ -103,7 +103,7 @@ describe("pages", () => {
   it("home renders the agent card, seal receipt, feed and leaderboard", () => {
     const html = renderHome({
       ...empty,
-      stats: { ...empty.stats, agents: 20, decisions: 40, sealedOnTime: 12, sealsSinceFirst: 12, firstSealHour: H, lastSeal: seal, lastIngest: { hour: H, ok: 35, failed: 0 } },
+      stats: { ...empty.stats, agents: 20, decisions: 40, sealedOnTime: 12, sealsSinceFirst: 12, sealsTotal: 14, missedTotal: 2, firstSealHour: H, lastSeal: seal, lastIngest: { hour: H, ok: 35, failed: 0 } },
       agents: [agent],
       decisions: [{ agent: agent.id, template: "dip_hunter", market: "TSLA", hour: H, action: "buy", record: { fired: ["entry:rsi(14)<30"], values: {} } }],
       featuredSeries: [1, 2, 3],
@@ -118,7 +118,7 @@ describe("pages", () => {
     expect(html).toContain("+1.82 pts");
     expect(html).toContain("56");
     expect(html).toContain("Buy signal: rsi(14)&lt;30");
-    expect(html).toContain("12/12");
+    expect(html).toContain("12/14");
     expect(html).toContain("/verify?hour=");
   });
 

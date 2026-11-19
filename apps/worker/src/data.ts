@@ -130,18 +130,22 @@ export interface SiteStats {
   sealedOnTime: number;
   sealsSinceFirst: number;
   missedSinceFirst: number;
+  /** Every hour in the seals table, including the hours missed before the first confirmed seal. */
+  sealsTotal: number;
+  missedTotal: number;
   firstSealHour: number | null;
   lastSeal: SealSummary | null;
   lastIngest: { hour: number; ok: number; failed: number } | null;
 }
 
 export async function siteStats(db: D1Database): Promise<SiteStats> {
-  const [agents, decisions, first, lastSeal, ingest] = await Promise.all([
+  const [agents, decisions, first, lastSeal, ingest, all] = await Promise.all([
     db.prepare("SELECT COUNT(*) AS n FROM agents").first<{ n: number }>(),
     db.prepare("SELECT COUNT(*) AS n FROM decisions").first<{ n: number }>(),
     db.prepare("SELECT MIN(hour) AS h FROM seals WHERE status = 'confirmed'").first<{ h: number | null }>(),
     db.prepare("SELECT hour, root, leaf_count, status, tx_hash, block_number, block_time, timing FROM seals WHERE status = 'confirmed' ORDER BY hour DESC LIMIT 1").first<SealSummary>(),
     db.prepare("SELECT hour, ok, failed FROM ingest_runs WHERE finished_at IS NOT NULL ORDER BY hour DESC LIMIT 1").first<{ hour: number; ok: number; failed: number }>(),
+    db.prepare("SELECT COUNT(*) AS n, SUM(status IN ('missed', 'failed')) AS miss FROM seals").first<{ n: number; miss: number | null }>(),
   ]);
   const firstHour = first?.h ?? null;
   let onTime = 0;
@@ -163,6 +167,8 @@ export async function siteStats(db: D1Database): Promise<SiteStats> {
     sealedOnTime: onTime,
     sealsSinceFirst: total,
     missedSinceFirst: missed,
+    sealsTotal: all?.n ?? 0,
+    missedTotal: all?.miss ?? 0,
     firstSealHour: firstHour,
     lastSeal: lastSeal ?? null,
     lastIngest: ingest ?? null,

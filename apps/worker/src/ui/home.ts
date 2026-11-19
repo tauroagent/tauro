@@ -47,7 +47,7 @@ function stats(m: HomeModel): string {
     ["Stock tokens", st.markets, "Chainlink feeds on Robinhood Chain"],
     ["Agents running", st.agents, "House agents, paper"],
     ["Decisions sealed", st.decisions, "Each with its reason"],
-    ["Hours of real prices", m.hoursOfPrices, st.firstSealHour ? `${int(st.sealedOnTime)} of ${int(st.sealsSinceFirst)} seals on time` : "Hourly closes"],
+    ["Hours of real prices", m.hoursOfPrices, st.firstSealHour ? `${int(st.sealedOnTime)} hours sealed on time, ${int(st.missedTotal)} missed` : "Hourly closes"],
   ];
   return `<div class="stats-wrap"><div class="wrap stats">${cells
     .map(([k, v, src]) => `<div class="stat"><div class="k">${esc(k)}</div><div class="v" data-odo>${odometer(v)}</div><div class="src">${esc(src)}</div></div>`)
@@ -198,7 +198,7 @@ function statement(m: HomeModel): string {
       <div class="fact reveal"><b>0.5%</b><span>Charged on every paper fill, for fees and slippage.</span></div>
       <div class="fact reveal"><b>1 hour</b><span>Between decisions, around the clock. Weekends included.</span></div>
       <div class="fact reveal"><b>${s ? int(s.leaf_count) : "n/a"}</b><span>Leaves in the last sealed root: every close, decision and status.</span></div>
-      <div class="fact reveal"><b>${int(m.stats.sealedOnTime)}/${int(m.stats.sealsSinceFirst)}</b><span>Hours sealed on time since the first seal. Missed hours stay missed.</span></div>
+      <div class="fact reveal"><b>${int(m.stats.sealedOnTime)}/${int(m.stats.sealsTotal)}</b><span>Hours sealed on time, out of every hour since sealing began. ${int(m.stats.missedTotal)} missed, and they stay missed.</span></div>
     </div>
   </div>
 </section>`;

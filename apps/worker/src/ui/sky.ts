@@ -30,7 +30,7 @@ export function skyHero(m: HomeModel): string {
     .map((x) => `<span class="${x.status === "confirmed" && x.timing === "on_time" ? "ok" : x.status === "missed" || x.status === "failed" ? "miss" : ""}" title="${esc(utcStamp(x.hour))}: ${esc(x.status)}">${esc(utcHour(x.hour).slice(0, 2))}</span>`)
     .join("");
   const top = m.agents[0];
-  const onTimeRate = st.sealsSinceFirst ? (st.sealedOnTime / st.sealsSinceFirst) * 100 : null;
+  const onTimeRate = st.sealsTotal ? (st.sealedOnTime / st.sealsTotal) * 100 : null;
   return `<section class="sky" aria-labelledby="hero-h">
   <canvas data-sky aria-hidden="true"></canvas>
   <div class="planet-surface" data-planet aria-hidden="true"></div>
@@ -63,7 +63,7 @@ export function skyHero(m: HomeModel): string {
           <span class="who"><span class="dot"><img src="/brand/mark-mono.svg" alt="" width="18" height="18" style="filter:invert(1)"></span><span>SealRegistry<small>${s?.tx_hash ? esc(short(s.tx_hash, 6, 4)) : "0xfb88…eE14"}</small></span></span></div>
         <div class="kpi2">
           <div><div class="k">Decisions sealed (since start)</div><div class="v">${int(st.decisions)}</div><div class="d" style="color:#8b8988">${int(st.agents)} house agents, hourly</div></div>
-          <div><div class="k">Hours sealed on time</div><div class="v">${int(st.sealedOnTime)}<span style="font-size:.6em;color:#8b8988"> / ${int(st.sealsSinceFirst)}</span></div><div class="d ${onTimeRate === 100 ? "up" : ""}">${onTimeRate === null ? "first seal pending" : `${onTimeRate.toFixed(1)}% on time`}</div></div>
+          <div><div class="k">Hours sealed on time</div><div class="v">${int(st.sealedOnTime)}<span style="font-size:.6em;color:#8b8988"> / ${int(st.sealsTotal)}</span></div><div class="d ${onTimeRate === 100 ? "up" : ""}">${onTimeRate === null ? "first seal pending" : `${int(st.missedTotal)} missed, still shown`}</div></div>
         </div>
         <div class="chart-box">
           <div class="h">${best ? `Replay: ${esc(TEMPLATE_LABEL[best.template]!)} on ${esc(best.market)}` : "Replay"}<span>${best ? `${pct(best.returnPct)} vs holding ${pct(best.holdPct)}` : ""}</span></div>
