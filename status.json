@@ -77,8 +77,8 @@
     {
       "id": "calls",
       "text": "Anyone can sign a call on a stock token. It is sealed in the next hourly root on Robinhood Chain and scored against the Chainlink close at its horizon.",
-      "status": "in_testing",
-      "proof": "apps/worker/test/calls.test.ts, https://tauroagent.com/calls"
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/proof?hour=1795100400&subject=call-7d16d5463a3b (first call, tx 0xd1b72fe7…b890, on time), apps/worker/test/calls.test.ts"
     },
     {
       "id": "bounty",

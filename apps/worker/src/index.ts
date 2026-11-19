@@ -89,6 +89,8 @@ const LLMS = `# Tauro
 - Hourly Chainlink closes for 35 Robinhood Chain stock tokens: https://tauroagent.com/api/v1/markets
 - 20 house paper agents (momentum, mean reversion, dip hunter, breakout on SPY, QQQ, NVDA, TSLA, AAPL): https://tauroagent.com/api/v1/agents
 - Hourly Merkle seals on chain: https://tauroagent.com/api/v1/seals
+- Sealed calls: anyone signs a call on a stock token (up or down, 1 hour to 7 days). It is sealed in the next hourly root and scored against the Chainlink close at its horizon. Free: https://tauroagent.com/calls, https://tauroagent.com/api/v1/calls
+- Seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour, until 31 December 2026: https://tauroagent.com/bounty
 - Holder agents: hold 1,000,000 TAURO for one paper agent slot, 5,000,000 for three, or burn 1,000,000 for one more slot for 30 days. Start one with a signed message, no transaction: https://tauroagent.com/token, https://tauroagent.com/api/v1/tier?address=<wallet>
 - Proof for any leaf: https://tauroagent.com/api/v1/proof?hour=<unix hour>&subject=<agent id | symbol | status.json>
 - Every public claim and its status: https://tauroagent.com/api/v1/status
