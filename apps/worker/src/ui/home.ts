@@ -258,7 +258,7 @@ function leaderboard(m: HomeModel): string {
 
 // Roadmap items, keyed by status.json claim id. The column each one lands in is its status in status.json,
 // so an item moves from Planned to Live only when the claim file says so.
-const ROAD: [string, string, string][] = [
+const ROAD: [string, string, string, string?][] = [
   ["seal", "Hourly seals on chain", "Decisions and closes sealed in SealRegistry before the next close, with a proof for every leaf."],
   ["agents", "20 house paper agents", "Four strategies on SPY, QQQ, NVDA, TSLA and AAPL, each compared with holding."],
   ["api", "Read API, no key", "Prices, seals, proofs, agents and decisions, open to anyone."],
@@ -270,7 +270,7 @@ const ROAD: [string, string, string][] = [
   ["bounty", "Seal bounty", "5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour."],
   ["verify_cli", "Verify CLI", "One file rebuilds any sealed hour and checks it against Robinhood Chain: root, timing, Chainlink rounds, call signatures."],
   ["mcp", "MCP server", "Read-only, no key, at tauroagent.com/mcp: prices, agents, seals, proofs, calls and verify_hour for any AI agent."],
-  ["live_wallet", "One public real-money wallet", "200 USDG mirroring the NVDA mean-reversion agent. Every fill links its transaction and the decision sealed before it, behind the Chainlink price gate. Live since 20 November 2026: see /live."],
+  ["live_wallet", "One public real-money wallet", "200 USDG mirroring the NVDA mean-reversion agent. Every fill links its transaction and the decision sealed before it, behind the Chainlink price gate. Live since 20 November 2026.", "/live"],
   ["api_limits", "Higher API limits for holders", "120 requests a minute for everyone; a signed key gives 1,200 with 1,000,000 TAURO and 6,000 with 5,000,000."],
 ];
 
@@ -279,7 +279,7 @@ function roadmap(m: HomeModel): string {
   const col = (s: string, cls: string, title: string) => {
     const items = ROAD.filter(([id]) => status.get(id) === s);
     if (!items.length) return "";
-    return `<div class="c"><span class="st ${cls}">${esc(title)}</span><ul class="road-list">${items.map(([, h, p]) => `<li><h3>${esc(h)}</h3><p>${esc(p)}</p></li>`).join("")}</ul></div>`;
+    return `<div class="c"><span class="st ${cls}">${esc(title)}</span><ul class="road-list">${items.map(([, h, p, href]) => `<li><h3>${href ? `<a href="${esc(href)}">${esc(h)} →</a>` : esc(h)}</h3><p>${esc(p)}</p></li>`).join("")}</ul></div>`;
   };
   return `<div class="panel-dark" id="roadmap" style="padding-top:96px">
   <div class="wrap">

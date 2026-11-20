@@ -72,7 +72,7 @@ export function renderAgent(a: AgentSummary, series: { hour: number; equity: num
   const body = `<div class="page-head"><div class="wrap">
   <p class="crumbs"><a href="/agents">Agents</a> / ${esc(a.id)}</p>
   <h1>${esc(agentName(a))}</h1>
-  <p style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0"><span class="tag">${a.owner === "house" ? "House agent" : `Holder agent · <a href="https://robin.etherscan.io/address/${esc(a.owner)}">${esc(ownerLabel(a.owner).replace("Holder ", ""))}</a>`}</span><span class="tag paper">Paper</span><span class="tag">${esc(TEMPLATE_LABEL[a.template] ?? a.template)}</span><span class="tag">${a.qty > 0 ? "Holding " + esc(a.market) : "Flat"}</span></p>
+  <p style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0"><span class="tag">${a.owner === "house" ? "House agent" : `Holder agent · <a href="https://robin.etherscan.io/address/${esc(a.owner)}">${esc(ownerLabel(a.owner).replace("Holder ", ""))}</a>`}</span><span class="tag paper">Paper</span><span class="tag">${esc(TEMPLATE_LABEL[a.template] ?? a.template)}</span><span class="tag">${a.qty > 0 ? "Holding " + esc(a.market) : "Flat"}</span>${a.id === "house-mean-reversion-nvda" ? `<a class="tag" href="/live">Mirrored with real money →</a>` : ""}</p>
 </div></div>
 <section style="padding-top:32px"><div class="wrap grid-2">
   <div>
