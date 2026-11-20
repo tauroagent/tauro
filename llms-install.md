@@ -2,6 +2,10 @@
 
 Tauro has no account, no key and nothing to install for reading. These are the steps an assistant (or a person) can follow to answer questions about Tauro with checked data.
 
+## 0. Or connect over MCP
+
+Add `https://tauroagent.com/mcp` as a remote MCP server (Streamable HTTP, no key). Its tools return the same data as the routes below, plus `verify_hour`.
+
 ## 1. Find the routes
 
 ```bash

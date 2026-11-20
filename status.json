@@ -106,9 +106,9 @@
     },
     {
       "id": "mcp",
-      "text": "MCP server for agents.",
-      "status": "planned",
-      "proof": null
+      "text": "MCP server for agents: read-only, no key, at tauroagent.com/mcp. Markets, prices, agents, decisions, seals, proofs, calls, claims, and verify_hour, which rebuilds a root and compares it with Robinhood Chain.",
+      "status": "live",
+      "proof": "https://tauroagent.com/mcp (POST JSON-RPC), apps/worker/src/mcp.ts, apps/worker/test/mcp.test.ts"
     },
     {
       "id": "api_limits",

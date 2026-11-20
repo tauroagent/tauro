@@ -13,6 +13,7 @@ import { renderHome, type HomeModel } from "./ui/home.js";
 import { renderAgent, renderAgents, renderBounty, renderCall, renderCaller, renderCalls, renderLeaderboard, renderMarket, renderMarkets, renderNotFound, renderStudio, renderToken, renderVerify } from "./ui/pages.js";
 import { MARKETS, UNIVERSE_SOURCES } from "./universe.js";
 import { holdersRoute, slotRules } from "./holders-api.js";
+import { mcpRoute } from "./mcp.js";
 
 export interface Env {
   DB: D1Database;
@@ -51,6 +52,7 @@ const ROUTES = {
   "/api/v1/burns": "Every TAURO burn recorded for slots. POST {tx} to record yours; it is checked on chain.",
   "/api/v1/status": "Every public claim and its status (status.json).",
   "/version": "Deployed git commit.",
+  "POST /mcp": "Remote MCP server (Streamable HTTP, read-only, no key): markets, prices, agents, decisions, seals, proofs, calls, status, verify_hour.",
 };
 
 async function latestCloses(db: D1Database) {
@@ -96,6 +98,7 @@ const LLMS = `# Tauro
 - Holder agents: hold 1,000,000 TAURO for one paper agent slot, 5,000,000 for three, or burn 1,000,000 for one more slot for 30 days. Start one with a signed message, no transaction: https://tauroagent.com/token, https://tauroagent.com/api/v1/tier?address=<wallet>
 - Proof for any leaf: https://tauroagent.com/api/v1/proof?hour=<unix hour>&subject=<agent id | symbol | status.json>
 - Every public claim and its status: https://tauroagent.com/api/v1/status
+- MCP server: https://tauroagent.com/mcp (Streamable HTTP, read-only, no key)
 
 ## What Tauro is not
 - No agent trades real money yet. All returns are paper.
@@ -108,7 +111,11 @@ Source (MIT): https://github.com/tauroagent/tauro
 async function handle(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
   if (req.method === "OPTIONS")
-    return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "content-type", "access-control-max-age": "86400" } });
+    return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "content-type, accept, mcp-protocol-version, mcp-session-id", "access-control-max-age": "86400" } });
+  if (url.pathname === "/mcp") {
+    const api = async (path: string) => (await handle(new Request(url.origin + path), env)).json();
+    return mcpRoute(req, api, client(env.RPC_URL), env.GIT_SHA ?? "dev");
+  }
   if (url.pathname === "/api/v1/calls" || url.pathname.startsWith("/api/v1/calls/")) {
     const r = await callsRoute(url.pathname, req, url, env.DB, client(env.RPC_URL), json);
     if (r) return r;

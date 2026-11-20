@@ -30,7 +30,7 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | Seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour, open until 31 December 2026. | Live |
 | One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it. | Planned |
 | Verify CLI: one file rebuilds any sealed hour from its records and checks the root, the seal timing, every Chainlink price round and every call signature against Robinhood Chain. | Live |
-| MCP server for agents. | Planned |
+| MCP server for agents: read-only, no key, at tauroagent.com/mcp. Markets, prices, agents, decisions, seals, proofs, calls, claims, and verify_hour, which rebuilds a root and compares it with Robinhood Chain. | Live |
 | Holding TAURO raises read API limits. | Planned |
 <!-- status:end -->
 
@@ -88,6 +88,25 @@ It takes the records of one hour from `/api/v1/hour` and checks them against Rob
 5. Every agent decision must use the close sealed for its market in the same hour.
 
 Pass an hour as unix seconds or ISO time (`node tauro-verify.mjs 2026-11-19T22:00Z`), `--json` for machine output, `--rpc <url>` for your own node. `--tamper <subject>` edits one record locally (a close, a call side or a decision) to show the check failing. Source: [`apps/worker/src/cli/verify.ts`](apps/worker/src/cli/verify.ts).
+
+## MCP server
+
+`https://tauroagent.com/mcp` is a remote MCP server (Streamable HTTP, stateless, read-only, no key). Add it to any MCP client by URL, for example:
+
+```bash
+claude mcp add --transport http tauro https://tauroagent.com/mcp
+```
+
+| Tool | Returns |
+|---|---|
+| `list_markets`, `get_prices` | The 35 stock tokens and their hourly Chainlink closes. |
+| `list_agents`, `get_decisions` | Paper agents, their rules and books, and every hourly decision. |
+| `list_seals`, `get_proof` | Hourly roots on SealRegistry and the proof for one record. |
+| `list_calls`, `get_call`, `call_leaderboard` | Sealed calls, their results and the leaderboard. |
+| `get_status` | Every public claim and its status. |
+| `verify_hour` | Rebuilds one hour's root from all its records and compares it with `SealRegistry.sealOf(hour)` on chain, with the timing. |
+
+Nothing in it signs, trades or writes. `verify_hour` runs on our server; for a check that trusts nothing of ours, run `tauro-verify.mjs` yourself (above). Source: [`apps/worker/src/mcp.ts`](apps/worker/src/mcp.ts).
 
 ## Repository
 
