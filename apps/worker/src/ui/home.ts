@@ -270,7 +270,7 @@ const ROAD: [string, string, string][] = [
   ["bounty", "Seal bounty", "5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour."],
   ["verify_cli", "Verify CLI", "One file rebuilds any sealed hour and checks it against Robinhood Chain: root, timing, Chainlink rounds, call signatures."],
   ["mcp", "MCP server", "Read-only, no key, at tauroagent.com/mcp: prices, agents, seals, proofs, calls and verify_hour for any AI agent."],
-  ["live_wallet", "One public real-money wallet", "Every real fill links its transaction and the decision sealed before it, and passes the Chainlink price gate. Caps published before it starts."],
+  ["live_wallet", "One public real-money wallet", "200 USDG mirroring the NVDA mean-reversion agent. Every fill links its transaction and the decision sealed before it, behind the Chainlink price gate. Dry run first: see /live."],
   ["api_limits", "Higher API limits for holders", "120 requests a minute for everyone; a signed key gives 1,200 with 1,000,000 TAURO and 6,000 with 5,000,000."],
 ];
 

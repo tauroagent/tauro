@@ -52,6 +52,7 @@ export async function buildPending(db: D1Database): Promise<number[]> {
       }>()
     ).results;
     const calls = (await db.prepare("SELECT * FROM calls WHERE hour = ? ORDER BY id").bind(hour).all<CallRow>()).results;
+    const fills = (await db.prepare("SELECT hour, mode, record FROM live_orders WHERE created_hour = ? ORDER BY mode, hour").bind(hour).all<{ hour: number; mode: string; record: string }>()).results;
     const extra = [
       ...decisions.map((d) => ({ kind: LeafKind.Decision, subject: d.agent, record: d.record })),
       ...created.map((a) => ({
@@ -60,6 +61,8 @@ export async function buildPending(db: D1Database): Promise<number[]> {
         record: canonicalize({ agent: a.id, owner: a.owner, template: a.template, market: a.market, rules: JSON.parse(a.rules), config_hash: a.config_hash, paper: a.paper === 1, start_cash: a.start_cash }),
       })),
       ...calls.map((c) => ({ kind: LeafKind.Call, subject: c.id, record: callRecord(c) })),
+      // Real-money (and dry-run) orders made during this hour, each pointing at a decision sealed in an earlier root.
+      ...fills.map((f) => ({ kind: LeafKind.Fill, subject: `live-${f.mode}-${f.hour}`, record: canonicalize(JSON.parse(f.record)) })),
     ];
     const { leaves, root } = buildHour(hour, rows, FEEDS, status, extra);
     const t = now();

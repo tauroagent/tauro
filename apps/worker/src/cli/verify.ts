@@ -184,6 +184,24 @@ async function main() {
   }
   add("decisions", dfails, `${checked} of ${decisions.length} agent decisions checked: each used the close sealed for its market`);
 
+  // 8. Every real-money order (Fill leaf) acted on a decision that was already sealed on chain, and its tx came after that seal.
+  const fills = records.filter((l) => l.kind === LeafKind.Fill);
+  const ffails: string[] = [];
+  for (const l of fills) {
+    const r = l.record as { decision_hour: number; tx_hash?: string | null; status: string };
+    if (!(r.decision_hour < hour)) { ffails.push(`${l.subject}: decision hour is not before the fill hour`); continue; }
+    const s = await pub.readContract({ address: REGISTRY, abi: SEAL_ABI, functionName: "sealOf", args: [BigInt(r.decision_hour)] });
+    if (/^0x0+$/.test(s.root)) { ffails.push(`${l.subject}: its decision hour has no seal on chain`); continue; }
+    if (Number(s.sealedAt) >= hour + 3600) { ffails.push(`${l.subject}: decision sealed after this hour ended`); continue; }
+    if (r.tx_hash) {
+      const rc = await pub.getTransactionReceipt({ hash: r.tx_hash as Hex }).catch(() => null);
+      if (!rc) { ffails.push(`${l.subject}: tx ${r.tx_hash} not found on chain`); continue; }
+      const b = await pub.getBlock({ blockNumber: rc.blockNumber });
+      if (Number(b.timestamp) < Number(s.sealedAt)) ffails.push(`${l.subject}: tx came before the decision was sealed`);
+    }
+  }
+  if (fills.length) add("fills", ffails, `${fills.length} real-money order${fills.length === 1 ? "" : "s"}: decision sealed on chain before the order`);
+
   const pass = checks.every((x) => x.ok);
   if (JSON_OUT) {
     console.log(JSON.stringify({ hour, hour_utc: utc(hour), pass, root, chain_root: onchain.root, tampered: TAMPER ? { subject: TAMPER, edit } : null, checks }, null, 1));

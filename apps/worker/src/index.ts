@@ -10,16 +10,21 @@ import { callsRoute, callView, getCall, listCalls, callRules, leaderboard, calle
 import { backtest, TEMPLATES } from "@tauro/engine";
 import { agentSummaries, closes, equitySeries, hoursOfPrices, marketCards, recentDecisions, recentSeals, showcase, siteStats } from "./data.js";
 import { renderHome, type HomeModel } from "./ui/home.js";
+import { renderLive } from "./ui/pages.js";
 import { renderAgent, renderAgents, renderBounty, renderCall, renderCaller, renderCalls, renderLeaderboard, renderMarket, renderMarkets, renderNotFound, renderStudio, renderToken, renderVerify } from "./ui/pages.js";
 import { MARKETS, UNIVERSE_SOURCES } from "./universe.js";
 import { holdersRoute, slotRules } from "./holders-api.js";
 import { mcpRoute } from "./mcp.js";
+import { liveView, runLive } from "./live.js";
 import { chainBalance, keysRoute, limit, limitRules } from "./apikeys.js";
 
 export interface Env {
   DB: D1Database;
   RPC_URL?: string;
   GIT_SHA?: string;
+  LIVE_MODE?: string;
+  LIVE_START_HOUR?: string;
+  LIVE_KEY?: string;
   RL_OPEN?: RateLimit;
   RL_HOLDER?: RateLimit;
   RL_HOLDER_PLUS?: RateLimit;
@@ -56,6 +61,7 @@ const ROUTES = {
   "/api/v1/burns": "Every TAURO burn recorded for slots. POST {tx} to record yours; it is checked on chain.",
   "/api/v1/status": "Every public claim and its status (status.json).",
   "/version": "Deployed git commit.",
+  "/api/v1/live": "The one real-money wallet: mode (dry run or live), caps, book and every order with its gate check, tx and the sealed decision behind it.",
   "/api/v1/limits": "Read limits per minute: 120 per IP without a key, 1,200 for wallets holding 1,000,000 TAURO, 6,000 for 5,000,000.",
   "POST /api/v1/keys": "Get a read key with a wallet signature (no transaction). Send it as x-tauro-key. GET with the header shows its tier.",
   "POST /mcp": "Remote MCP server (Streamable HTTP, read-only, no key): markets, prices, agents, decisions, seals, proofs, calls, status, verify_hour.",
@@ -156,6 +162,10 @@ async function handle(req: Request, env: Env): Promise<Response> {
         burns: results.map((b) => ({ tx_hash: b.tx_hash, owner: b.owner, tauro: tk(b.amount), slots: b.slots, block_time: new Date(b.block_time * 1000).toISOString(), expires_at: new Date(b.expires_at * 1000).toISOString() })),
       }), 200, 60);
     }
+    case "/live":
+      return html(renderLive(await liveView(env)), 200, 60);
+    case "/api/v1/live":
+      return json(await liveView(env), { maxAge: 60 });
     case "/bounty":
       return html(renderBounty());
     case "/calls": {
@@ -350,7 +360,8 @@ export default {
         for (const h of ingest.hours) agents.push(await runAgents(env.DB, h, env.GIT_SHA ?? "dev", c));
         const built = await buildPending(env.DB);
         const sent = await sendPending(env, c);
-        console.log("hourly", JSON.stringify({ ingest, agents, built, sent }));
+        const live = await runLive(env, c, Math.floor(Date.now() / 1000)).catch((e) => [{ error: String(e).slice(0, 300) }]);
+        console.log("hourly", JSON.stringify({ ingest, agents, built, sent, live }));
       })(),
     );
   },

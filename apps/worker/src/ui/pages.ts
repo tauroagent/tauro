@@ -407,3 +407,33 @@ export function renderBounty(): string {
 <section style="padding-top:0"><div class="wrap"><p class="dim" style="font-size:13px">Source: <a href="https://github.com/tauroagent/tauro">github.com/tauroagent/tauro</a> (contracts/, packages/seal). SealRegistry has no owner, no upgrade path and no pause. No third-party audit. The reward is in TAURO, which pays nothing and shares in nothing.</p></div></section>`;
   return layout({ title: "Seal bounty · Tauro", description: "Fake one sealed decision on Tauro's SealRegistry on Robinhood Chain and win 5,000,000 TAURO. Rules and scope.", path: "/bounty" }, body);
 }
+
+// ---- /live: the one real-money wallet
+type LiveViewT = Awaited<ReturnType<typeof import("../live.js").liveView>>;
+export function renderLive(v: LiveViewT): string {
+  const c = v.caps;
+  const modeLabel = v.mode === "live" ? "Live, real money" : v.mode === "dry_run" ? "Dry run: real quotes, no transactions" : "Off";
+  const book = (v.books[v.mode] ?? v.books["dry_run"]) as { start_usdg: number; cash_usdg: number; qty: number; equity_usdg: number; halted: string | null; orders: Record<string, unknown>[] } | undefined;
+  const n = (x: unknown, d = 2) => (typeof x === "number" ? x.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d }) : "–");
+  const rows = (book?.orders ?? []).map((o) => {
+    const st = String(o.status), act = String(o.action);
+    const tx = o.tx_hash ? `<a href="https://robinhoodchain.blockscout.com/tx/${esc(String(o.tx_hash))}">${esc(short(String(o.tx_hash)))}</a>` : `<span class="dim">${o.mode === "dry_run" ? "dry run" : "none"}</span>`;
+    const proof = `<a href="/api/v1/proof?hour=${Number(o.decision_hour)}&subject=${esc(v.agent)}">decision</a>`;
+    return `<tr><td>${esc(utcStamp(Number(o.decision_hour)))}</td><td>${esc(act)}</td><td class="${st === "filled" ? "up" : st === "blocked" || st === "failed" ? "down" : "dim"}">${esc(st)}${o.reason ? ` <span class="dim">(${esc(String(o.reason))})</span>` : ""}</td><td class="num">${n(o.amount_in, 4)}</td><td class="num hide-sm">${n(o.pool_price)}</td><td class="num hide-sm">${n(o.chainlink_price)}</td><td class="num hide-sm">${o.gap_bps ?? "–"}</td><td>${tx}</td><td>${proof}</td></tr>`;
+  }).join("");
+  const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Real money · ${esc(modeLabel)}</p><h1>One wallet. <em>Decisions sealed before every trade.</em></h1>
+<p class="lead">One public wallet mirrors one house agent, <a href="/agents/${esc(v.agent)}">mean reversion on NVDA</a>, chosen before any live result. It acts only after the agent's decision is sealed on Robinhood Chain and the Chainlink price gate passes. Team money only: no deposits, no payouts. Not investment advice.</p></div></div>
+<section style="padding-top:40px"><div class="wrap">
+  <div class="cards3">
+    <div class="card panel"><div class="dim" style="font-size:13px">Equity (USDG)</div><div class="big-result">${n(book?.equity_usdg)}</div><p style="margin:6px 0 0">from ${n(book?.start_usdg ?? c.startUsdg, 0)} USDG at the start</p></div>
+    <div class="card panel"><div class="dim" style="font-size:13px">Holding</div><div class="big-result">${n(book?.qty, 4)} NVDA</div><p style="margin:6px 0 0">${n(book?.cash_usdg)} USDG in cash</p></div>
+    <div class="card panel"><div class="dim" style="font-size:13px">Wallet</div><div class="big-result" style="font-size:22px">${v.wallet ? `<a href="https://robinhoodchain.blockscout.com/address/${esc(v.wallet)}"><code>${esc(short(v.wallet))}</code></a>` : "not funded yet"}</div><p style="margin:6px 0 0">${book?.halted ? `<span class="down">Halted: ${esc(book.halted)}</span>` : "Running"}</p></div>
+  </div>
+  <h2 style="font-size:22px;margin-top:32px">Caps, published before the first trade</h2>
+  <ul class="how-list"><li><b>Size.</b> The agent's paper order × ${c.scale}, at most $${c.maxOrderUsd} per order and $${c.maxDayUsd} a day.</li><li><b>Price gate.</b> No swap if the pool and Chainlink differ by more than ${c.maxGapBps / 100}% or the feed is older than ${c.maxFeedAgeSec / 3600} hours. Slippage at most ${c.slippageBps / 100}%.</li><li><b>Stops.</b> Halts if equity falls ${c.drawdownStop * 100}% below the start, or after ${c.gateFailStop} orders in a row blocked by the gate.</li><li><b>Venue.</b> ${esc(v.venue)}, pool <code>${esc(short(v.pool))}</code>.</li><li><b>Order of events.</b> ${esc(v.order_of_events)}</li></ul>
+  <h2 style="font-size:22px;margin-top:32px">Orders</h2>
+  ${rows ? `<div class="scroll"><table class="table"><thead><tr><th scope="col">Decision hour (UTC)</th><th scope="col">Action</th><th scope="col">Result</th><th scope="col" class="num">Amount in</th><th scope="col" class="num hide-sm">Pool</th><th scope="col" class="num hide-sm">Chainlink</th><th scope="col" class="num hide-sm">Gap bps</th><th scope="col">Tx</th><th scope="col">Proof</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="state">No orders yet. The agent has not bought or sold since this started.</p>`}
+  <p class="dim" style="font-size:13px;margin-top:12px">JSON: <a href="/api/v1/live">/api/v1/live</a>. Every order is sealed as a Fill leaf in the next hourly root.</p>
+</div></section>`;
+  return layout({ title: "Live wallet · Tauro", description: "One public wallet trades real money on Robinhood Chain stock tokens, acting only on decisions sealed on chain first.", path: "/live" }, body);
+}

@@ -10,7 +10,7 @@ export const robinhood = defineChain({
 });
 
 // Public mirrors first: the official endpoint refuses some Cloudflare egress IPs.
-const PUBLIC_RPCS = ["https://robinhood-rpc.publicnode.com", "https://robinhood.drpc.org", "https://rpc.mainnet.chain.robinhood.com"];
+export const PUBLIC_RPCS = ["https://robinhood-rpc.publicnode.com", "https://robinhood.drpc.org", "https://rpc.mainnet.chain.robinhood.com"];
 
 export function client(rpcUrl?: string): PublicClient {
   const urls = [...(rpcUrl ? [rpcUrl] : []), ...PUBLIC_RPCS];
