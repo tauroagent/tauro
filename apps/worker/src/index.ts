@@ -39,6 +39,7 @@ const ROUTES = {
   "/api/v1/ingest?hours=48": "Every ingest run, including failed reads, newest first.",
   "/api/v1/seals?hours=48": "Hourly Merkle roots: built, sent, confirmed on SealRegistry, failed or missed.",
   "/api/v1/proof?hour=1794690000&subject=TSLA": "One leaf with its record, Merkle proof, root and seal status.",
+  "/api/v1/hour?hour=1794690000": "Every leaf of one sealed hour with its canonical record, so the whole root can be rebuilt. Used by tauro-verify.mjs.",
   "/api/v1/agents": "All paper agents, house and holder: rules, config hash, paper book, equity vs buy-and-hold.",
   "/api/v1/decisions?agent=house-momentum-tsla&hours=24": "Every hourly decision of one agent, with the numbers its rules looked at and any paper fill.",
   "/api/v1/tier?address=0x…": "A wallet's TAURO balance, holder agent slots, burns and agents. Read from chain on each call.",
@@ -193,6 +194,25 @@ async function handle(req: Request, env: Env): Promise<Response> {
         .bind(hours)
         .all();
       return json({ chain_id: 4663, registry: env.REGISTRY_ADDRESS ?? null, signer_configured: Boolean(env.SIGNER_KEY), seals: results });
+    }
+    case "/api/v1/hour": {
+      const hour = Number(url.searchParams.get("hour"));
+      if (!Number.isInteger(hour) || hour % 3600 !== 0) return json({ error: "hour must be unix seconds at the start of an hour" }, { status: 400 });
+      const seal = await env.DB.prepare("SELECT hour, root, leaf_count, prev_root, status, tx_hash, block_number, block_time, timing FROM seals WHERE hour = ?").bind(hour).first<{ root: string }>();
+      if (!seal) return json({ error: "no seal built for this hour" }, { status: 404 });
+      const { results } = await env.DB.prepare("SELECT leaf, kind, subject, record FROM leaves WHERE hour = ? ORDER BY kind, subject").bind(hour).all<{ leaf: Hex; kind: number; subject: string; record: string }>();
+      return json(
+        {
+          hour,
+          chain_id: 4663,
+          registry: env.REGISTRY_ADDRESS ?? null,
+          seal,
+          leaf_count: results.length,
+          leaves: results.map((l) => ({ kind: l.kind, subject: l.subject, leaf: l.leaf, record_canonical: l.record })),
+          how_to_check: "Run tauro-verify.mjs: it re-hashes every record, rebuilds the root, reads SealRegistry and the Chainlink rounds on Robinhood Chain, and checks call signatures.",
+        },
+        { maxAge: 300 },
+      );
     }
     case "/api/v1/proof": {
       const hour = Number(url.searchParams.get("hour"));

@@ -29,7 +29,7 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | A public leaderboard ranks every caller by hit rate after 3 resolved calls. Wrong calls stay on it, and each call and record has a share card. | Live |
 | Seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour, open until 31 December 2026. | Live |
 | One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it. | Planned |
-| Verify CLI: recompute any sealed hour from public data. | Planned |
+| Verify CLI: one file rebuilds any sealed hour from its records and checks the root, the seal timing, every Chainlink price round and every call signature against Robinhood Chain. | Live |
 | MCP server for agents. | Planned |
 | Holding TAURO raises read API limits. | Planned |
 <!-- status:end -->
@@ -69,6 +69,25 @@ sequenceDiagram
 - **It proves** that a decision published later is the same one committed when the hour was sealed, and when that was.
 - **It does not prove** that the decision was good, that the agent makes money, or that the backend chose its inputs honestly. The prices behind each decision are recorded in the leaf so they can be re-read from chain, but the computation runs on our server.
 - **Missed hours stay missed.** The contract only accepts hours in rising order, and each root names the one before it, so a skipped hour cannot be filled in later.
+
+## Verify an hour yourself
+
+One file, Node 18 or newer, nothing to install:
+
+```bash
+curl -sO https://tauroagent.com/tauro-verify.mjs
+node tauro-verify.mjs latest
+```
+
+It takes the records of one hour from `/api/v1/hour` and checks them against Robinhood Chain, not against us:
+
+1. Every record is hashed into its leaf, and the leaves are rebuilt into the Merkle root.
+2. The root must equal `SealRegistry.sealOf(hour)` at `0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14`, and the seal must have landed on time.
+3. Every price must be the Chainlink round that closed the hour, read from the feed itself. The feed addresses are built into the file.
+4. Every sealed call must be signed by the wallet it names.
+5. Every agent decision must use the close sealed for its market in the same hour.
+
+Pass an hour as unix seconds or ISO time (`node tauro-verify.mjs 2026-11-19T22:00Z`), `--json` for machine output, `--rpc <url>` for your own node. `--tamper <subject>` edits one record locally (a close, a call side or a decision) to show the check failing. Source: [`apps/worker/src/cli/verify.ts`](apps/worker/src/cli/verify.ts).
 
 ## Repository
 

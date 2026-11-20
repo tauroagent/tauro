@@ -268,7 +268,7 @@ const ROAD: [string, string, string][] = [
   ["calls", "Sealed calls", "Anyone signs a call on a stock token. It is sealed in the next hourly root and scored at its horizon. Free."],
   ["call_leaderboard", "Call leaderboard", "Every caller ranked by hit rate, misses included, with a share card for each call and record."],
   ["bounty", "Seal bounty", "5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour."],
-  ["verify_cli", "Verify CLI", "Recompute any sealed hour from public data."],
+  ["verify_cli", "Verify CLI", "One file rebuilds any sealed hour and checks it against Robinhood Chain: root, timing, Chainlink rounds, call signatures."],
   ["mcp", "MCP server", "Tauro data and proofs, for agents."],
   ["live_wallet", "One public real-money wallet", "Every real fill links its transaction and the decision sealed before it, and passes the Chainlink price gate. Caps published before it starts."],
   ["api_limits", "Higher API limits for holders", "Holding TAURO raises read API limits."],

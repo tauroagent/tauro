@@ -16,6 +16,7 @@
     "src"
   ],
   "exclude": [
-    "src/client"
+    "src/client",
+    "src/cli"
   ]
 }

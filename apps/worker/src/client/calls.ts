@@ -1,3 +1,4 @@
+export {};
 // Sealed calls: connect a wallet, sign a call, POST it. The text must match callMessage() in src/calls.ts.
 type Eth = { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> };
 const eth = (): Eth | undefined => (window as unknown as { ethereum?: Eth }).ethereum;

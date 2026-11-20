@@ -1,3 +1,4 @@
+export {};
 // Holder agents: connect a wallet, read its slots, sign a launch message. Also the /token page forms.
 // The message text must match launchMessage() in src/holders.ts exactly; the server rebuilds it.
 

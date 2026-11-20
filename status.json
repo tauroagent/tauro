@@ -100,9 +100,9 @@
     },
     {
       "id": "verify_cli",
-      "text": "Verify CLI: recompute any sealed hour from public data.",
-      "status": "planned",
-      "proof": null
+      "text": "Verify CLI: one file rebuilds any sealed hour from its records and checks the root, the seal timing, every Chainlink price round and every call signature against Robinhood Chain.",
+      "status": "live",
+      "proof": "https://tauroagent.com/tauro-verify.mjs (source apps/worker/src/cli/verify.ts), https://tauroagent.com/api/v1/hour?hour=1795125600"
     },
     {
       "id": "mcp",

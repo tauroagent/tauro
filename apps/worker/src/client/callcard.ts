@@ -1,3 +1,4 @@
+export {};
 // Share cards for a sealed call or a caller record, drawn on a canvas from the page's data attributes.
 const W = 1200, H = 675, SF = 'system-ui, -apple-system, "Segoe UI", sans-serif', MONO = '"SF Mono", ui-monospace, Menlo, monospace';
 const TONE: Record<string, string> = { up: "#45d27a", down: "#ff8a7a", "": "#f7f7f8" };
@@ -33,7 +34,7 @@ async function draw(el: HTMLElement, cv: HTMLCanvasElement) {
   } else {
     ctx.font = `700 120px ${SF}`; ctx.fillStyle = "#f7f7f8"; ctx.fillText(d.hit ?? "", 70, 250);
     ctx.font = `600 34px ${SF}`; ctx.fillStyle = "#c9b8ea"; ctx.fillText(`right, ${d.right} of ${d.resolved} resolved calls`, 70, 306);
-    rows(ctx, [["Caller", d.caller ?? ""], ["Avg move", d.edge ?? "", d.tone], ["Open calls", d.open ?? "0"], ["Rank", d.rank ?? ""]], 70, 372);
+    rows(ctx, [["Caller", d.caller ?? ""], ["Avg move", d.edge ?? "", d.tone ?? ""], ["Open calls", d.open ?? "0"], ["Rank", d.rank ?? ""]], 70, 372);
   }
   ctx.font = `500 22px ${SF}`; ctx.fillStyle = "#8b8988";
   ctx.fillText("Signed before the move. Sealed, no edits. Paper only, not investment advice.", 70, H - 50);

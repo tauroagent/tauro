@@ -27,6 +27,8 @@ The proof route gives you `kind`, `subject`, `hour`, `record_canonical`, `leaf`,
 3. Read the root on Robinhood Chain (chain id 4663): `SealRegistry.sealOf(hour)` at `0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14`, or call `verify(hour, leaf, proof)`.
 4. `onTime(hour)` says whether the seal landed before the next hourly close.
 
+To check a whole hour at once from a terminal: `curl -sO https://tauroagent.com/tauro-verify.mjs && node tauro-verify.mjs latest`. It rebuilds the root from every record and checks it, the Chainlink rounds and call signatures against Robinhood Chain.
+
 The page `https://tauroagent.com/verify` runs these six checks in the browser and lets you edit a record to watch the proof fail.
 
 ## 3. Report it honestly
