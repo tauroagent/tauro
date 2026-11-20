@@ -13,8 +13,8 @@
   "vars": {
     "REGISTRY_ADDRESS": "0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14",
     // Real-money wallet (src/live.ts): off | dry_run | live. Dry run from this hour; switch to live only after it passes.
-    "LIVE_MODE": "dry_run",
-    "LIVE_START_HOUR": "1795165200"
+    "LIVE_MODE": "live",
+    "LIVE_START_HOUR": "1795190400"
   },
   // Read API limits per minute (src/apikeys.ts): open per IP, holder tiers per wallet key.
   "ratelimits": [
