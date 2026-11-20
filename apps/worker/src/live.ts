@@ -101,6 +101,12 @@ export async function quoteAndGate(pub: PublicClient, plan: Extract<Plan, { do: 
   return { tokenIn, tokenOut, amountIn, quoteOut, gate, quote, poolPrice, inN, outN };
 }
 
+/** Accepts the key with or without 0x (MetaMask exports it without). Returns null if it is not 32 bytes of hex. */
+export function liveAccount(key: string | undefined) {
+  const k = (key ?? "").trim().replace(/^0x/i, "");
+  return /^[0-9a-fA-F]{64}$/.test(k) ? privateKeyToAccount(`0x${k}` as Hex) : null;
+}
+
 export interface LiveEnv { DB: D1Database; LIVE_MODE?: string; LIVE_START_HOUR?: string; LIVE_KEY?: string }
 export const liveMode = (env: LiveEnv): Mode => (env.LIVE_MODE === "live" || env.LIVE_MODE === "dry_run" ? env.LIVE_MODE : "off");
 
@@ -150,8 +156,8 @@ async function actOn(env: LiveEnv, pub: PublicClient, mode: Mode, d: Decision, s
   const db = env.DB;
   let book = await bookOf(db, mode);
   const live = mode === "live";
-  const account = live && env.LIVE_KEY ? privateKeyToAccount(env.LIVE_KEY as Hex) : null;
-  if (live && !account) return record(db, mode, d, nowSec, sealedAt, { status: "skipped", reason: "LIVE_KEY is not set" }, book, null);
+  const account = live ? liveAccount(env.LIVE_KEY) : null;
+  if (live && !account) return record(db, mode, d, nowSec, sealedAt, { status: "skipped", reason: "LIVE_KEY is missing or not a valid key" }, book, null);
   if (account) {
     const [u, t] = await Promise.all([
       pub.readContract({ address: LIVE.usdg.address, abi: ERC20, functionName: "balanceOf", args: [account.address] }),
@@ -223,7 +229,7 @@ const round = (x: number, d = 6) => Math.round(x * 10 ** d) / 10 ** d;
 /** Public view for /live and /api/v1/live. */
 export async function liveView(env: LiveEnv) {
   const mode = liveMode(env);
-  const wallet = env.LIVE_KEY ? privateKeyToAccount(env.LIVE_KEY as Hex).address : null;
+  const wallet = liveAccount(env.LIVE_KEY)?.address ?? null;
   const books: Record<string, unknown> = {};
   for (const m of ["dry_run", "live"] as const) {
     const { results } = await env.DB.prepare("SELECT record FROM live_orders WHERE mode = ? ORDER BY hour DESC LIMIT 200").bind(m).all<{ record: string }>();

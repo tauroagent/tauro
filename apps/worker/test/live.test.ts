@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { haltReason, LIVE, minOut, planOrder, type Decision } from "../src/live.js";
+import { haltReason, LIVE, liveAccount, minOut, planOrder, type Decision } from "../src/live.js";
 
 const d = (action: Decision["action"], sizeUsd = 100): Decision => ({ hour: 1_795_125_600, action, sizeUsd, leaf: "0x01" });
 
@@ -44,5 +44,13 @@ describe("live wallet", () => {
   it("sets the minimum output 0.5% under the quote", () => {
     expect(minOut(1_000_000n)).toBe(995_000n);
     expect(minOut(139_808_000_000_000_000n)).toBe(139_108_960_000_000_000n);
+  });
+
+  it("reads the key with or without 0x and rejects anything else", () => {
+    const k = "11".repeat(32);
+    expect(liveAccount(k)?.address).toBe(liveAccount(`0x${k}`)?.address);
+    expect(liveAccount(` 0x${k}\n`)?.address).toBe(liveAccount(k)?.address);
+    expect(liveAccount("not a key")).toBeNull();
+    expect(liveAccount(undefined)).toBeNull();
   });
 });
