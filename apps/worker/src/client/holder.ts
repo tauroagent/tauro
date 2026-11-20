@@ -104,3 +104,25 @@ burnForm?.addEventListener("submit", async (ev) => {
     out.innerHTML = `<span class="holder-ok">Recorded: ${fmt(j.tauro)} TAURO from ${esc(j.owner.slice(0, 6))}…${esc(j.owner.slice(-4))}, ${j.slots} slot${j.slots > 1 ? "s" : ""} until ${esc(j.expires_at.slice(0, 10))}.</span>`;
   } catch (e) { out.innerHTML = `<span class="holder-err">${esc((e as Error).message)}</span>`; }
 });
+
+// ---- /token: read API key (message text must match keyMessage() in src/apikeys.ts)
+const keyBtn = $<HTMLButtonElement>("[data-key-get]");
+keyBtn?.addEventListener("click", async () => {
+  const out = $<HTMLElement>("[data-key-out]")!;
+  const e = eth();
+  if (!e) { out.innerHTML = `<span class="holder-err">No wallet found in this browser.</span>`; return; }
+  try {
+    keyBtn.disabled = true;
+    const account = ((await e.request({ method: "eth_requestAccounts" })) as string[])[0]!.toLowerCase();
+    const issued = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+    const message = ["Tauro: API key", `Wallet: ${account}`, `Issued: ${issued}`, "Read-only. This signature sends no transaction and costs nothing."].join("\n");
+    const signature = (await e.request({ method: "personal_sign", params: [message, account] })) as string;
+    const r = await fetch("/api/v1/keys", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address: account, issued, signature }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error ?? "no key");
+    out.innerHTML = `<span class="holder-ok">Tier ${esc(j.tier)}: ${fmt(j.requests_per_minute)} requests a minute (${fmt(j.balance_tauro)} TAURO).</span><div class="field" style="margin-top:10px"><label for="k-key">Your key, shown once</label><input id="k-key" readonly value="${esc(j.key)}" spellcheck="false"></div>`;
+    $<HTMLInputElement>("#k-key")?.select();
+  } catch (err) {
+    out.innerHTML = `<span class="holder-err">${esc((err as Error).message || "Signing was declined.")}</span>`;
+  } finally { keyBtn.disabled = false; }
+});

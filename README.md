@@ -31,7 +31,7 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | One public wallet trades real money. Every real fill links to its tx and to a decision sealed before it. | Planned |
 | Verify CLI: one file rebuilds any sealed hour from its records and checks the root, the seal timing, every Chainlink price round and every call signature against Robinhood Chain. | Live |
 | MCP server for agents: read-only, no key, at tauroagent.com/mcp. Markets, prices, agents, decisions, seals, proofs, calls, claims, and verify_hour, which rebuilds a root and compares it with Robinhood Chain. | Live |
-| Holding TAURO raises read API limits. | Planned |
+| Holding TAURO raises read API limits: 120 requests a minute per IP without a key, 1,200 for a wallet key with 1,000,000 TAURO, 6,000 with 5,000,000. Keys come from a signature; the tier follows the balance on chain. | Live |
 <!-- status:end -->
 
 ## Addresses (Robinhood Chain, 4663)
@@ -137,6 +137,18 @@ curl https://tauroagent.com/api/v1/burns                   # TAURO burns recorde
 ```
 
 A close is the Chainlink round last updated before the hour ended. Each row carries the `round_id` and `updated_at`, so it can be re-read on chain with `getRoundData`.
+
+### Limits and keys
+
+`/api/*` and `/mcp` are open without a key at 120 requests a minute per IP. A wallet holding TAURO can get a key for more:
+
+| TAURO in the wallet | Requests a minute |
+|---|---|
+| none needed | 120 per IP |
+| 1,000,000 | 1,200 per key |
+| 5,000,000 | 6,000 per key |
+
+Get a key on [tauroagent.com/token](https://tauroagent.com/token) by signing one message (no transaction), or `POST /api/v1/keys` with `{address, issued, signature}` over the text in `keyMessage()` ([`apps/worker/src/apikeys.ts`](apps/worker/src/apikeys.ts)). Send it as the `x-tauro-key` header. The tier follows the balance, re-read on chain at most once an hour; only the key's hash is stored. A key never unlocks writes or anything paid. Every response carries `x-tauro-tier` and `x-ratelimit-limit`; over the limit you get `429` with `retry-after: 60`. Limits are Cloudflare's Workers rate limiting: approximate and counted per Cloudflare location, so a short burst can pass before the first `429`.
 
 ## $TAURO and holder agents
 

@@ -11,5 +11,11 @@
   // Minute 1 of every hour: ingest the hour that just closed.
   "triggers": { "crons": ["1 * * * *"] },
   "vars": { "REGISTRY_ADDRESS": "0xfb88b3FaEd64ee8086008EC4acEb2243B005eE14" },
+  // Read API limits per minute (src/apikeys.ts): open per IP, holder tiers per wallet key.
+  "ratelimits": [
+    { "name": "RL_OPEN", "namespace_id": "4663001", "simple": { "limit": 120, "period": 60 } },
+    { "name": "RL_HOLDER", "namespace_id": "4663002", "simple": { "limit": 1200, "period": 60 } },
+    { "name": "RL_HOLDER_PLUS", "namespace_id": "4663003", "simple": { "limit": 6000, "period": 60 } }
+  ],
   "observability": { "enabled": true }
 }

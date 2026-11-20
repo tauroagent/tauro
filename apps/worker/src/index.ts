@@ -14,11 +14,15 @@ import { renderAgent, renderAgents, renderBounty, renderCall, renderCaller, rend
 import { MARKETS, UNIVERSE_SOURCES } from "./universe.js";
 import { holdersRoute, slotRules } from "./holders-api.js";
 import { mcpRoute } from "./mcp.js";
+import { chainBalance, keysRoute, limit, limitRules } from "./apikeys.js";
 
 export interface Env {
   DB: D1Database;
   RPC_URL?: string;
   GIT_SHA?: string;
+  RL_OPEN?: RateLimit;
+  RL_HOLDER?: RateLimit;
+  RL_HOLDER_PLUS?: RateLimit;
   SIGNER_KEY?: string;
   REGISTRY_ADDRESS?: string;
 }
@@ -52,6 +56,8 @@ const ROUTES = {
   "/api/v1/burns": "Every TAURO burn recorded for slots. POST {tx} to record yours; it is checked on chain.",
   "/api/v1/status": "Every public claim and its status (status.json).",
   "/version": "Deployed git commit.",
+  "/api/v1/limits": "Read limits per minute: 120 per IP without a key, 1,200 for wallets holding 1,000,000 TAURO, 6,000 for 5,000,000.",
+  "POST /api/v1/keys": "Get a read key with a wallet signature (no transaction). Send it as x-tauro-key. GET with the header shows its tier.",
   "POST /mcp": "Remote MCP server (Streamable HTTP, read-only, no key): markets, prices, agents, decisions, seals, proofs, calls, status, verify_hour.",
 };
 
@@ -99,6 +105,7 @@ const LLMS = `# Tauro
 - Proof for any leaf: https://tauroagent.com/api/v1/proof?hour=<unix hour>&subject=<agent id | symbol | status.json>
 - Every public claim and its status: https://tauroagent.com/api/v1/status
 - MCP server: https://tauroagent.com/mcp (Streamable HTTP, read-only, no key)
+- Read limits: 120 requests a minute per IP without a key; TAURO holders can get a key for more: https://tauroagent.com/api/v1/limits
 
 ## What Tauro is not
 - No agent trades real money yet. All returns are paper.
@@ -111,7 +118,8 @@ Source (MIT): https://github.com/tauroagent/tauro
 async function handle(req: Request, env: Env): Promise<Response> {
   const url = new URL(req.url);
   if (req.method === "OPTIONS")
-    return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "content-type, accept, mcp-protocol-version, mcp-session-id", "access-control-max-age": "86400" } });
+    return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "content-type, accept, mcp-protocol-version, mcp-session-id, x-tauro-key", "access-control-max-age": "86400" } });
+  if (url.pathname === "/api/v1/keys") return keysRoute(req, env.DB, client(env.RPC_URL), json);
   if (url.pathname === "/mcp") {
     const api = async (path: string) => (await handle(new Request(url.origin + path), env)).json();
     return mcpRoute(req, api, client(env.RPC_URL), env.GIT_SHA ?? "dev");
@@ -271,6 +279,8 @@ async function handle(req: Request, env: Env): Promise<Response> {
         decisions: results.map((r) => ({ hour: r.hour, action: r.action, record: JSON.parse(r.record), proof: `/api/v1/proof?hour=${r.hour}&subject=${agent}` })),
       });
     }
+    case "/api/v1/limits":
+      return json(limitRules(), { maxAge: 300 });
     case "/api/v1/status":
       return json(status, { maxAge: 300 });
     case "/version":
@@ -315,6 +325,17 @@ async function handle(req: Request, env: Env): Promise<Response> {
 export default {
   async fetch(req, env): Promise<Response> {
     try {
+      const path = new URL(req.url).pathname;
+      if (req.method !== "OPTIONS" && (path.startsWith("/api/") || path === "/mcp")) {
+        const l = await limit(req, env.DB, { open: env.RL_OPEN, holder: env.RL_HOLDER, holder_plus: env.RL_HOLDER_PLUS }, chainBalance(client(env.RPC_URL)));
+        if (l.deny) return l.deny;
+        const res = await handle(req, env);
+        const out = new Response(res.body, res);
+        out.headers.set("x-tauro-tier", l.tier);
+        out.headers.set("x-ratelimit-limit", `${l.perMinute};w=60`);
+        out.headers.set("x-ratelimit-policy", l.checked ? "enforced" : "unbound");
+        return out;
+      }
       return await handle(req, env);
     } catch (e) {
       return json({ error: "internal error", detail: String(e).slice(0, 200) }, { status: 500, maxAge: 0 });

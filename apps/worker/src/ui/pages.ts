@@ -261,6 +261,13 @@ export function renderToken(t: TokenPage): string {
     <div class="field"><label for="t-tx">Burn transaction hash</label><input id="t-tx" name="tx" placeholder="0x…" autocomplete="off" spellcheck="false"></div>
     <button class="btn" type="submit">Check and record</button><div data-burn-out aria-live="polite" style="margin-top:12px"></div></form>
 </div></section>
+<section style="padding-top:0"><div class="wrap"><div class="card panel" data-key-panel>
+  <h2 style="font-size:20px;margin:0 0 6px">Read API key</h2>
+  <p style="margin:0 0 12px">The API and the MCP server are open to everyone at 120 requests a minute per IP. A wallet holding 1,000,000 TAURO gets a key for 1,200 a minute; 5,000,000 gets 6,000. Sign one message, no transaction. The tier follows your balance, re-read on chain at most once an hour.</p>
+  <button class="btn" type="button" data-key-get>Connect wallet and get a key</button>
+  <div data-key-out aria-live="polite" style="margin-top:12px"></div>
+  <p class="dim" style="font-size:13px;margin:12px 0 0">Send it as the <code>x-tauro-key</code> header. The key is shown once; making a new one replaces it. Rules: <a href="/api/v1/limits">/api/v1/limits</a></p>
+</div></div></section>
 <section style="padding-top:0"><div class="wrap"><h2 style="font-size:22px">Burns <span class="dim" style="font-size:16px">${fmt(t.totalBurned)} TAURO in total</span></h2>${rows}
 <p class="dim" style="font-size:13px;margin-top:12px">JSON: <a href="/api/v1/burns">/api/v1/burns</a> · <a href="/api/v1/tier?address=${esc(t.address)}">/api/v1/tier</a>. Holder agents are paper, like every agent here. Not investment advice.</p></div></section>`;
   return layout({ title: "$TAURO slots · Tauro", description: "Hold TAURO to run your own paper trading agent on Robinhood Chain, sealed every hour. Burn TAURO for more slots.", path: "/token", scripts: ["/js/holder.js"] }, body);

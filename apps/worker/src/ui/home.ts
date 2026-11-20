@@ -271,7 +271,7 @@ const ROAD: [string, string, string][] = [
   ["verify_cli", "Verify CLI", "One file rebuilds any sealed hour and checks it against Robinhood Chain: root, timing, Chainlink rounds, call signatures."],
   ["mcp", "MCP server", "Read-only, no key, at tauroagent.com/mcp: prices, agents, seals, proofs, calls and verify_hour for any AI agent."],
   ["live_wallet", "One public real-money wallet", "Every real fill links its transaction and the decision sealed before it, and passes the Chainlink price gate. Caps published before it starts."],
-  ["api_limits", "Higher API limits for holders", "Holding TAURO raises read API limits."],
+  ["api_limits", "Higher API limits for holders", "120 requests a minute for everyone; a signed key gives 1,200 with 1,000,000 TAURO and 6,000 with 5,000,000."],
 ];
 
 function roadmap(m: HomeModel): string {

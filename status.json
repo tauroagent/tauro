@@ -112,8 +112,9 @@
     },
     {
       "id": "api_limits",
-      "text": "Holding TAURO raises read API limits.",
-      "status": "planned"
+      "text": "Holding TAURO raises read API limits: 120 requests a minute per IP without a key, 1,200 for a wallet key with 1,000,000 TAURO, 6,000 with 5,000,000. Keys come from a signature; the tier follows the balance on chain.",
+      "status": "live",
+      "proof": "https://tauroagent.com/api/v1/limits, https://tauroagent.com/token (key form), apps/worker/src/apikeys.ts, apps/worker/test/apikeys.test.ts"
     }
   ]
 }
