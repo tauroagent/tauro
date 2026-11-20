@@ -94,13 +94,16 @@ function strategies(m: HomeModel): string {
 </div>`;
 }
 
+// White logos that need a dark tile.
+const LIGHT_LOGO = new Set(["AMZN", "CLSK", "QQQ", "RGTI"]);
+
 function markets(m: HomeModel): string {
   const cards = m.markets
     .filter((c) => c.price !== null)
     .map((c) => {
       const tn = tone(c.change24);
       return `<a class="mkt" href="/markets/${esc(c.symbol)}">
-  <div class="hd"><span class="mono-av">${esc(c.symbol.slice(0, 4))}</span><div><div class="sym">${esc(c.symbol)}</div><div class="nm">${esc(c.name)}</div></div></div>
+  <div class="hd"><img class="mkt-logo${LIGHT_LOGO.has(c.symbol) ? " on-dark" : ""}" src="/logos/${esc(c.symbol)}.png" alt="" width="30" height="30" loading="lazy"><div><div class="sym">${esc(c.symbol)}</div><div class="nm">${esc(c.name)}</div></div></div>
   ${spark(c.series, 200, 44, true, `${c.symbol}, last 48 hours`).replace('class="spark"', `class="spark ${tn}"`)}
   <div class="px"><span>$${price(c.price!)}</span><span class="${tn}">${pct(c.change24)}</span></div>
 </a>`;

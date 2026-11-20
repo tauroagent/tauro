@@ -60,7 +60,7 @@ ${(meta.scripts ?? []).map((s) => `<script type="module" src="${s}"></script>`).
     <div class="top-right">
       <a class="icon-btn" href="https://github.com/tauroagent/tauro" aria-label="Source code on GitHub">${GH_ICON}</a>
       <a class="icon-btn" href="https://x.com/Tauro_Agent" aria-label="Tauro on X">${X_ICON}</a>
-      <a class="btn sm hide-sm" href="/agents">See agents</a>
+      <a class="btn sm hide-sm" href="/calls">Make a call</a>
       <button class="icon-btn menu-btn" type="button" data-menu aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">${MENU_ICON}</button>
     </div>
   </div>
