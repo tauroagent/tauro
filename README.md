@@ -28,7 +28,7 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | Anyone can sign a call on a stock token. It is sealed in the next hourly root on Robinhood Chain and scored against the Chainlink close at its horizon. | Live |
 | A public leaderboard ranks every caller by hit rate after 3 resolved calls. Wrong calls stay on it, and each call and record has a share card. | Live |
 | Seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour, open until 31 December 2026. | Live |
-| One public wallet trades real money (200 USDG, mirroring the NVDA mean-reversion agent). Every real fill links to its tx and to a decision sealed before it. In a 3-day dry run with real quotes and no transactions first. | In testing |
+| One public wallet trades real money (200 USDG, mirroring the NVDA mean-reversion agent). Every real fill links to its tx and to a decision sealed before it. Live since 20 November 2026, 16:00 UTC, after a 7-hour dry run. | Live |
 | Verify CLI: one file rebuilds any sealed hour from its records and checks the root, the seal timing, every Chainlink price round and every call signature against Robinhood Chain. | Live |
 | MCP server for agents: read-only, no key, at tauroagent.com/mcp. Markets, prices, agents, decisions, seals, proofs, calls, claims, and verify_hour, which rebuilds a root and compares it with Robinhood Chain. | Live |
 | Holding TAURO raises read API limits: 120 requests a minute per IP without a key, 1,200 for a wallet key with 1,000,000 TAURO, 6,000 with 5,000,000. Keys come from a signature; the tier follows the balance on chain. | Live |

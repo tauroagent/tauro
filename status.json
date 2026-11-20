@@ -94,9 +94,9 @@
     },
     {
       "id": "live_wallet",
-      "text": "One public wallet trades real money (200 USDG, mirroring the NVDA mean-reversion agent). Every real fill links to its tx and to a decision sealed before it. In a 3-day dry run with real quotes and no transactions first.",
-      "status": "in_testing",
-      "proof": "https://tauroagent.com/live, apps/worker/src/live.ts, apps/worker/test/live.test.ts"
+      "text": "One public wallet trades real money (200 USDG, mirroring the NVDA mean-reversion agent). Every real fill links to its tx and to a decision sealed before it. Live since 20 November 2026, 16:00 UTC, after a 7-hour dry run.",
+      "status": "live",
+      "proof": "https://tauroagent.com/live, first fill tx 0x0159d1022666d1c58c08a9bd6890f7775af5c23359922f8e5d29d462d8394975 (20 November 2026 21:01 UTC), tauro-verify 1795204800 and 1795208400 PASS, apps/worker/src/live.ts"
     },
     {
       "id": "verify_cli",
