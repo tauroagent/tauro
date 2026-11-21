@@ -1,6 +1,8 @@
 import { agentName, explain, ownerLabel, TEMPLATE_LABEL, type AgentSummary, type DecisionRow, type MarketCard } from "../data.js";
 import { MARKETS } from "../universe.js";
 import { MIN_RANKED } from "../calls.js";
+import { CONTEST } from "../contest.js";
+const CONTEST_MIN = CONTEST.minCounted;
 import { layout } from "./layout.js";
 import { esc, int, lineChart, pct, price, pts, short, spark, tone, usd, utcStamp } from "./util.js";
 
@@ -316,6 +318,7 @@ export function renderCalls(calls: CallView[], rules: CallRulesT, board?: Board)
     : `<p class="state">No calls yet. Be the first on the record.</p>`;
   const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Sealed calls</p><h1>Make a call. <em>Seal it on chain.</em></h1>
 <p class="lead">Sign a call on any Robinhood Chain stock token. It goes into the next hourly root on Robinhood Chain, so it cannot be edited, deleted or backdated. The entry is that hour's Chainlink close, and the result is read when your horizon ends. Free, a signature, not a transaction.</p></div></div>
+${Date.now() / 1000 < CONTEST.end ? `<section style="padding-top:28px;padding-bottom:0"><div class="wrap"><a class="card panel contest-banner" href="/calls/contest"><b>Call Week 1 is open.</b> 21 to 28 November 2026. Best hit rate on 1, 4 and 24 hour calls wins up to 3,000,000 TAURO. Standings and rules →</a></div></section>` : ""}
 <section style="padding-top:40px"><div class="wrap tool" data-call>
   <div class="card panel"><h2 style="font-size:20px;margin:0 0 10px">Your call</h2>
     <div class="field"><label for="c-market">Stock token</label><select id="c-market">${opts}</select></div>
@@ -362,7 +365,7 @@ export function renderLeaderboard(b: Board): string {
   const ranked = b.callers.filter((c) => c.ranked), rest = b.callers.filter((c) => !c.ranked);
   const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">Sealed calls · leaderboard</p><h1>Who called it. <em>On the record.</em></h1>
 <p class="lead">Every call here was signed before the price moved and sealed on Robinhood Chain. Wrong calls stay on the board with the right ones. Nobody can delete a miss, us included.</p>
-<p class="ctas"><a class="btn" href="/calls">Make a call</a></p></div></div>
+<p class="ctas"><a class="btn" href="/calls">Make a call</a> <a class="btn ghost" href="/calls/contest">Call Week 1</a></p></div></div>
 <section style="padding-top:40px"><div class="wrap"><h2 style="font-size:22px">Ranked <span class="dim" style="font-size:16px">${int(ranked.length)} wallets with ${b.rules.min_resolved}+ resolved calls</span></h2>
 ${ranked.length ? `<div class="scroll"><table class="table">${BOARD_HEAD}<tbody>${boardRows(ranked)}</tbody></table></div>` : `<p class="state">Nobody is ranked yet. A wallet needs ${b.rules.min_resolved} resolved calls.</p>`}
 ${rest.length ? `<h2 style="font-size:20px;margin-top:32px">Not ranked yet <span class="dim" style="font-size:15px">fewer than ${b.rules.min_resolved} resolved calls</span></h2><div class="scroll"><table class="table">${BOARD_HEAD}<tbody>${boardRows(rest)}</tbody></table></div>` : ""}
@@ -436,4 +439,36 @@ export function renderLive(v: LiveViewT): string {
   <p class="dim" style="font-size:13px;margin-top:12px">JSON: <a href="/api/v1/live">/api/v1/live</a>. Every order is sealed as a Fill leaf in the next hourly root.</p>
 </div></section>`;
   return layout({ title: "Live wallet · Tauro", description: "One public wallet trades real money on Robinhood Chain stock tokens, acting only on decisions sealed on chain first.", path: "/live" }, body);
+}
+
+// ---- /calls/contest: Call Week
+type ContestViewT = Awaited<ReturnType<typeof import("../contest.js").contestView>>;
+export function renderContest(v: ContestViewT): string {
+  const r = v.rules;
+  const stateLabel: string = ({ not_started: "Starts soon", open: "Open now", resolving: "Closed, last calls resolving", final: "Final" } as Record<string, string>)[v.state] ?? "";
+  const tok = (x: number | null) => (x === null ? "n/a" : x >= 1_000_000 ? `${(x / 1_000_000).toFixed(2)}M` : x >= 1000 ? `${Math.round(x / 1000)}K` : x.toFixed(0));
+  const rows = v.entrants.map((e, i) => {
+    const who = `<a class="row-link" href="/callers/${esc(e.caller)}"><code>${esc(short(e.caller))}</code></a>`;
+    const elig = e.excluded ? `<span class="dim">team wallet</span>` : e.holds === null ? `<span class="dim">balance not read</span>` : e.holds ? `<span class="up">holds ${tok(e.balance)}</span>` : `<span class="dim">holds ${tok(e.balance)}</span>`;
+    return `<tr><td class="rank">${e.qualified ? i + 1 : "–"}</td><td>${who}</td><td class="num">${e.hit_rate === null ? "n/a" : Math.round(e.hit_rate) + "%"}</td><td class="num">${int(e.right)} / ${int(e.counted)}</td><td class="num ${tone(e.avg_edge_pct)}">${signed(e.avg_edge_pct)}</td><td class="num hide-sm">${int(e.void)}</td><td class="num hide-sm">${int(e.open)}</td><td class="hide-sm">${elig}</td><td>${e.prize ? `<b>${int(e.prize)} TAURO</b>${v.state === "final" ? "" : ` <span class="dim">if it holds</span>`}` : `<span class="dim">–</span>`}</td></tr>`;
+  }).join("");
+  const day = (iso: string) => `${Number(iso.slice(8, 10))} ${["January","February","March","April","May","June","July","August","September","October","November","December"][Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}, ${iso.slice(11, 16)} UTC`;
+  const [from, to] = r.window.split(" to ") as [string, string];
+  const body = `<div class="page-head"><div class="wrap"><p class="eyebrow">${esc(r.name)} · ${esc(stateLabel)}</p><h1>Seven days of calls. <em>Every miss on the record.</em></h1>
+<p class="lead">Make up to 3 calls a day on Robinhood Chain stock tokens. Each one is sealed on chain before the price moves and scored by Chainlink. Best hit rate after ${day(to)} wins TAURO. Free to play: a signature, not a transaction.</p>
+<p class="ctas"><a class="btn" href="/calls">Make a call</a> <a class="btn ghost" href="#rules">Rules</a></p></div></div>
+<section style="padding-top:40px"><div class="wrap">
+  <div class="cards3">
+    <div class="card panel"><div class="dim" style="font-size:13px">Window</div><div class="big-result" style="font-size:20px">${esc(day(from))}</div><p style="margin:6px 0 0">to ${esc(day(to))}</p></div>
+    <div class="card panel"><div class="dim" style="font-size:13px">Prizes</div><div class="big-result" style="font-size:20px">${r.prizes.map((p) => esc(p.replace(/^#\d: /, ""))).join(" · ")}</div><p style="margin:6px 0 0">for #1, #2 and #3</p></div>
+    <div class="card panel"><div class="dim" style="font-size:13px">So far</div><div class="big-result">${int(v.calls)} calls</div><p style="margin:6px 0 0">from ${int(v.entrants.length)} wallets</p></div>
+  </div>
+  <h2 style="font-size:22px;margin-top:32px">Standings</h2>
+  ${rows ? `<div class="scroll"><table class="table"><thead><tr><th scope="col">#</th><th scope="col">Caller</th><th scope="col" class="num">Hit rate</th><th scope="col" class="num">Right</th><th scope="col" class="num">Avg move</th><th scope="col" class="num hide-sm">Void</th><th scope="col" class="num hide-sm">Open</th><th scope="col" class="hide-sm">TAURO held</th><th scope="col">Prize</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="state">No calls in the window yet. The first one opens the board.</p>`}
+  <p class="dim" style="font-size:13px;margin-top:8px">A wallet is ranked after ${CONTEST_MIN} counted calls. Balances are read on chain each time this page loads. Updated every minute.</p>
+  <h2 id="rules" style="font-size:22px;margin-top:32px">Rules</h2>
+  <ul class="how-list"><li><b>What counts.</b> ${esc(r.counts)}</li><li><b>Void.</b> ${esc(r.void)}</li><li><b>Ranking.</b> ${esc(r.ranking)}</li><li><b>Limit.</b> ${esc(r.limit)}</li><li><b>Who can win.</b> ${esc(r.eligibility)}</li><li><b>Final.</b> Standings are final at ${esc(day(r.final))}. ${esc(r.payout)}</li></ul>
+  <p class="dim" style="font-size:13px">JSON: <a href="/api/v1/calls/contest">/api/v1/calls/contest</a>. ${esc(r.not_advice)} Calls are the opinions of the wallets that signed them, not Tauro's.</p>
+</div></section>`;
+  return layout({ title: `${r.name} · Tauro`, description: "Seven days of sealed calls on Robinhood Chain stock tokens. Best hit rate wins TAURO. Free to play, misses stay on the record.", path: "/calls/contest" }, body);
 }

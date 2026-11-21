@@ -27,6 +27,7 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | Burning 1,000,000 TAURO to the dead address adds one slot for 30 days. Each burn is checked on chain and listed publicly. | Live |
 | Anyone can sign a call on a stock token. It is sealed in the next hourly root on Robinhood Chain and scored against the Chainlink close at its horizon. | Live |
 | A public leaderboard ranks every caller by hit rate after 3 resolved calls. Wrong calls stay on it, and each call and record has a share card. | Live |
+| Call Week 1 (21 to 28 November 2026): the best hit rate on 1, 4 and 24 hour sealed calls wins 3,000,000, 2,000,000 or 1,000,000 TAURO, sent by the team after the final hour. Winners must hold 100,000 TAURO; flat results are void. | Live |
 | Seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour, open until 31 December 2026. | Live |
 | One public wallet trades real money (200 USDG, mirroring the NVDA mean-reversion agent). Every real fill links to its tx and to a decision sealed before it. Live since 20 November 2026, 16:00 UTC, after a 7-hour dry run. | Live |
 | Verify CLI: one file rebuilds any sealed hour from its records and checks the root, the seal timing, every Chainlink price round and every call signature against Robinhood Chain. | Live |

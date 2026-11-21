@@ -87,6 +87,12 @@
       "proof": "https://tauroagent.com/calls/leaderboard, https://tauroagent.com/api/v1/calls/leaderboard, apps/worker/test/calls.test.ts"
     },
     {
+      "id": "call_week",
+      "text": "Call Week 1 (21 to 28 November 2026): the best hit rate on 1, 4 and 24 hour sealed calls wins 3,000,000, 2,000,000 or 1,000,000 TAURO, sent by the team after the final hour. Winners must hold 100,000 TAURO; flat results are void.",
+      "status": "live",
+      "proof": "https://tauroagent.com/calls/contest, https://tauroagent.com/api/v1/calls/contest, apps/worker/src/contest.ts, apps/worker/test/contest.test.ts"
+    },
+    {
       "id": "bounty",
       "text": "Seal bounty: 5,000,000 TAURO for the first valid way to fake a sealed record or rewrite a sealed hour, open until 31 December 2026.",
       "status": "live",

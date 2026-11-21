@@ -10,12 +10,13 @@ import { callsRoute, callView, getCall, listCalls, callRules, leaderboard, calle
 import { backtest, TEMPLATES } from "@tauro/engine";
 import { agentSummaries, closes, equitySeries, hoursOfPrices, marketCards, recentDecisions, recentSeals, showcase, siteStats } from "./data.js";
 import { renderHome, type HomeModel } from "./ui/home.js";
-import { renderLive } from "./ui/pages.js";
+import { renderContest, renderLive } from "./ui/pages.js";
 import { renderAgent, renderAgents, renderBounty, renderCall, renderCaller, renderCalls, renderLeaderboard, renderMarket, renderMarkets, renderNotFound, renderStudio, renderToken, renderVerify } from "./ui/pages.js";
 import { MARKETS, UNIVERSE_SOURCES } from "./universe.js";
 import { holdersRoute, slotRules } from "./holders-api.js";
 import { mcpRoute } from "./mcp.js";
 import { liveView, runLive } from "./live.js";
+import { contestView } from "./contest.js";
 import { chainBalance, keysRoute, limit, limitRules } from "./apikeys.js";
 
 export interface Env {
@@ -56,6 +57,7 @@ const ROUTES = {
   "POST /api/v1/agents/launch": "Start your own paper agent with a wallet signature. Needs a free slot (hold or burn TAURO).",
   "POST /api/v1/agents/retire": "Stop one of your agents with a wallet signature. Its sealed history stays public.",
   "/api/v1/calls": "Sealed calls, newest first. POST a signed call (caller, market, side up|down, horizon 1|4|24|72|168 hours, note, issued, signature) to seal it in the next hourly root. ?caller=0x… for one wallet.",
+  "/api/v1/calls/contest": "Call Week 1: rules, window, prizes and standings. Counted calls are 1, 4 and 24 hour calls signed in the window; flat results are void.",
   "/api/v1/calls/leaderboard": "Every caller ranked by hit rate, then average move in the called direction. Ranked after 3 resolved calls; misses count.",
   "/api/v1/calls/call-…": "One sealed call: the signed text, its seal, proof link, entry close and result.",
   "/api/v1/burns": "Every TAURO burn recorded for slots. POST {tx} to record yours; it is checked on chain.",
@@ -173,6 +175,10 @@ async function handle(req: Request, env: Env): Promise<Response> {
       const rows = await listCalls(env.DB, null, 100);
       return html(renderCalls(await Promise.all(rows.map((r) => callView(env.DB, r, now))), callRules(), await leaderboard(env.DB, now)));
     }
+    case "/calls/contest":
+      return html(renderContest(await contestView(env.DB, client(env.RPC_URL), Math.floor(Date.now() / 1000))), 200, 60);
+    case "/api/v1/calls/contest":
+      return json(await contestView(env.DB, client(env.RPC_URL), Math.floor(Date.now() / 1000)), { maxAge: 60 });
     case "/calls/leaderboard":
       return html(renderLeaderboard(await leaderboard(env.DB, Math.floor(Date.now() / 1000))), 200, 60);
     case "/llms.txt":
