@@ -279,17 +279,15 @@ const ROAD: [string, string, string, string?][] = [
 
 function roadmap(m: HomeModel): string {
   const status = new Map(m.claims.map((c) => [c.id, c.status]));
-  const col = (s: string, cls: string, title: string) => {
-    const items = ROAD.filter(([id]) => status.get(id) === s);
-    if (!items.length) return "";
-    return `<div class="c"><span class="st ${cls}">${esc(title)}</span><ul class="road-list">${items.map(([, h, p, href]) => `<li><h3>${href ? `<a href="${esc(href)}">${esc(h)} →</a>` : esc(h)}</h3><p>${esc(p)}</p></li>`).join("")}</ul></div>`;
-  };
+  const order: [string, string, string][] = [["live", "", "Live"], ["in_testing", "test", "In testing"], ["planned", "plan", "Planned"]];
+  const cards = order.flatMap(([s, cls, title]) => ROAD.filter(([id]) => status.get(id) === s).map(([, h, p, href]) =>
+    `<li class="c"><span class="st ${cls}">${esc(title)}</span><h3>${href ? `<a href="${esc(href)}">${esc(h)} →</a>` : esc(h)}</h3><p>${esc(p)}</p></li>`)).join("");
   return `<div class="panel-dark" id="roadmap" style="padding-top:96px">
   <div class="wrap">
     <p class="eyebrow">Roadmap</p>
     <h2>What's live, <span class="grad">what's next</span></h2>
     <p class="lead">Each item takes its status from status.json, the same file as the table below. No dates: a planned item moves to live when its proof is public.</p>
-    <div class="road">${col("live", "", "Live")}${col("in_testing", "test", "In testing")}${col("planned", "plan", "Planned")}</div>
+    <ul class="road">${cards}</ul>
   </div>
 </div>`;
 }
