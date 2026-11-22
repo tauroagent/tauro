@@ -275,6 +275,7 @@ const ROAD: [string, string, string, string?][] = [
   ["mcp", "MCP server", "Read-only, no key, at tauroagent.com/mcp: prices, agents, seals, proofs, calls and verify_hour for any AI agent."],
   ["live_wallet", "One public real-money wallet", "200 USDG mirroring the NVDA mean-reversion agent. Every fill links its transaction and the decision sealed before it, behind the Chainlink price gate. Live since 20 November 2026.", "/live"],
   ["api_limits", "Higher API limits for holders", "120 requests a minute for everyone; a signed key gives 1,200 with 1,000,000 TAURO and 6,000 with 5,000,000."],
+  ["agent_vote", "Holders pick the next real-money agent", "Agents with 7 days of sealed paper record go on a ballot. TAURO holders vote by signature, no gas, at a snapshot block announced in advance. The winner gets a second live wallet, team money, same caps and price gate."],
 ];
 
 function roadmap(m: HomeModel): string {

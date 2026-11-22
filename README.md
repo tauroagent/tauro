@@ -33,6 +33,7 @@ The table is rendered from [`status.json`](status.json). CI fails if the two dis
 | Verify CLI: one file rebuilds any sealed hour from its records and checks the root, the seal timing, every Chainlink price round and every call signature against Robinhood Chain. | Live |
 | MCP server for agents: read-only, no key, at tauroagent.com/mcp. Markets, prices, agents, decisions, seals, proofs, calls, claims, and verify_hour, which rebuilds a root and compares it with Robinhood Chain. | Live |
 | Holding TAURO raises read API limits: 120 requests a minute per IP without a key, 1,200 for a wallet key with 1,000,000 TAURO, 6,000 with 5,000,000. Keys come from a signature; the tier follows the balance on chain. | Live |
+| Holders pick the next real-money agent: house and holder agents with 7 days of sealed paper record go on a ballot, TAURO holders vote by signature at a snapshot block announced in advance, and the winner gets a second live wallet funded by the team, with the same caps and price gate. | Planned |
 <!-- status:end -->
 
 ## Addresses (Robinhood Chain, 4663)

@@ -1,6 +1,6 @@
 {
   "$comment": "Single source of truth for public claims. README, site and docs render from this file; tools/claimcheck.mjs fails CI when they drift.",
-  "updated": "2026-11-20",
+  "updated": "2026-11-22",
   "claims": [
     {
       "id": "engine",
@@ -121,6 +121,11 @@
       "text": "Holding TAURO raises read API limits: 120 requests a minute per IP without a key, 1,200 for a wallet key with 1,000,000 TAURO, 6,000 with 5,000,000. Keys come from a signature; the tier follows the balance on chain.",
       "status": "live",
       "proof": "https://tauroagent.com/api/v1/limits, https://tauroagent.com/token (key form), apps/worker/src/apikeys.ts, apps/worker/test/apikeys.test.ts"
+    },
+    {
+      "id": "agent_vote",
+      "text": "Holders pick the next real-money agent: house and holder agents with 7 days of sealed paper record go on a ballot, TAURO holders vote by signature at a snapshot block announced in advance, and the winner gets a second live wallet funded by the team, with the same caps and price gate.",
+      "status": "planned"
     }
   ]
 }
