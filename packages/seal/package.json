@@ -4,5 +4,5 @@
   "license": "MIT",
   "type": "module",
   "exports": { ".": "./src/index.ts", "./canonical": "./src/canonical.ts" },
-  "dependencies": { "viem": "^2.38.0" }
+  "dependencies": { "viem": "^2.58.4" }
 }
